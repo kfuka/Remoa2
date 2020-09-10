@@ -1,3 +1,7 @@
+"""
+Gather all figs, numpy arrays, and create HTML report file.
+"""
+
 import numpy as np
 import glob
 import shutil
@@ -36,6 +40,10 @@ class build_report:
         self.create_html()
 
     def order_to_order(self):
+        """
+        change order of dicom files; old -> new
+        :return:
+        """
         dicom_order_dict = {}
         study_date=[]
         for npfile in self.file_list:
@@ -65,6 +73,11 @@ class build_report:
         self.new_times = new_times
 
     def create_table(self):
+        """
+        Create table using matplotlib.
+        table include marker motion for each dimension.
+        :return:
+        """
         uids = []
         table1 = np.zeros(4 * len(self.file_list) * 7).reshape((4, len(self.file_list) + 2, 5))
         time1s = []
@@ -121,6 +134,11 @@ class build_report:
         return table1, uids
 
     def return_colour_table(self, table1):
+        """
+        put yellow color if directional motion > 5 mm
+        :param table1: marker motion table
+        :return:
+        """
         colour_table = np.zeros(len(table1[:, 0, 0]) * len(table1[0, :, 0]) * len(table1[0, 0, :])).reshape(
             len(table1[:, 0, 0]), len(table1[0, :, 0]), len(table1[0, 0, :]))
         colour_table = colour_table.astype(str)
@@ -137,6 +155,10 @@ class build_report:
         return colour_table
 
     def plot_table_dyn(self):
+        """
+        plot table dynamically.
+        :return:
+        """
         table_fig=plt.figure(figsize=(8,4),dpi=100)
         for i in range(self.table1.shape[0]):
             v = i+1
@@ -159,6 +181,10 @@ class build_report:
         table_fig.savefig(self.table_file)
 
     def plot_table_fig(self):
+        """
+        plot all tables. This is not used.
+        :return:
+        """
         table_fig = plt.figure(figsize=(8, 4), dpi=100)
         plt.subplots_adjust(hspace=0.3)
         table_ax1 = table_fig.add_subplot(221)
@@ -208,6 +234,10 @@ class build_report:
         table_fig.savefig(self.table_file)
 
     def create_fig3(self):
+        """
+        create respiratory graph but not used now.
+        :return:
+        """
 
         fig3 = plt.figure(figsize=(8, 16))
 
@@ -295,6 +325,10 @@ class build_report:
         fig3.savefig(self.resp_file)
 
     def create_fig4_dyn(self):
+        """
+        create correlation plot dynamically.
+        :return:
+        """
         x1_fig = []
         x1s = np.array(self.x1s)
         y1s = np.array(self.y1s)
@@ -336,6 +370,10 @@ class build_report:
 
 
     def create_fig4(self):
+        """
+        Create correlation plot but not used.
+        :return:
+        """
         x1_fig = []
         x2_fig = []
         y1_fig = []
@@ -437,6 +475,10 @@ class build_report:
         fig4.savefig(self.corr_file)
 
     def create_html(self):
+        """
+        Create html report
+        :return:
+        """
         with open(self.report_file) as inf:
             txt = inf.read()
             soup = BeautifulSoup(txt, features="lxml")
