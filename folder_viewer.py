@@ -1,3 +1,9 @@
+"""
+This module is intended to list dicom file in a folder.
+Listed dicom files are visualized on gui created by tkinter with SOPInstance UID.
+User be asked to select two dicom files.
+"""
+
 import glob
 import pydicom
 import tkinter as tk
@@ -22,7 +28,15 @@ def get_wave_dicoms(folder_name):
 
 
 class DicomSelectGui(tk.Frame):
+    """
+    Open dicom selecting GUI
+    """
     def __init__(self, dicoms, master):
+        """
+        initialize gui
+        :param dicoms:list of dicom files
+        :param master: tk frame
+        """
         super().__init__(master)
         self.dicom = dicoms
         # self.master = master
@@ -33,6 +47,10 @@ class DicomSelectGui(tk.Frame):
         self.init_draw()
 
     def init_draw(self):
+        """
+        initial drawings for gui
+        :return: none
+        """
         self.frame = tk.Frame(self.master)
         self.frame.grid(row=0, column=0)
         self.file_label = tk.Label(self.frame, text="File name")
@@ -62,6 +80,10 @@ class DicomSelectGui(tk.Frame):
         exe_button.grid(row=len(self.dicom) + 2, column=0)
 
     def dicom_open(self):
+        """
+        open selected dicom pair.
+        :return:
+        """
         dicom_selection = []
         for i in range(len(self.checkval)):
             if self.checkval[i].get():
