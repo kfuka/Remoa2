@@ -11,7 +11,10 @@ def track_MIL(roi,array):
     before = from_f32_to_uint8(before)
     # before = self.gamma_correction(before,3.2)
 
-    tracker = cv2.TrackerMIL_create()
+    # tracker = cv2.TrackerMIL_create()
+    # tracker = cv2.Tracker_create("KCF")
+    # Tracker CSRT was employed
+    tracker = cv2.TrackerCSRT_create()
     ok = tracker.init(before, roi)
 
     for i in range(len(array)-1):
@@ -20,6 +23,11 @@ def track_MIL(roi,array):
         ok, bbox = tracker.update(after)
         if ok:
             history.append(list(bbox))
+        else:
+            history.append([0, 0, 0, 0])
+            print("Tracking failed")
+            print(ok)
+            print(bbox)
 
         """
         if ok:
@@ -47,6 +55,6 @@ def track_MIL(roi,array):
 
 
 def from_f32_to_uint8(img):
-    img2 = cv2.convertScaleAbs(img, alpha=(255.0 / 65535.0))
+    img2 = cv2.convertScaleAbs(img, alpha=(255.0 / np.max(img)))
     img2 = img2.astype(np.uint8)
     return img2
