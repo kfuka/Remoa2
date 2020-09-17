@@ -338,7 +338,7 @@ class Application(tk.Frame):
         self.save_data["state"] = "active"
         for i in range(len(self.roi_center1)):
             self.cor_ax1.plot(self.wave1, self.for_wave1[i], "o", mfc="None", c=wave_colors[i],
-                              label=str(i + 1) + "th marker")
+                              label="#" + str(i + 1))
             X = sm.add_constant(self.wave1)
             re = sm.OLS(self.for_wave1[i], X).fit()
             # print(re.params)
@@ -362,7 +362,7 @@ class Application(tk.Frame):
 
         for i in range(len(self.roi_center2)):
             self.cor_ax2.plot(self.wave2, self.for_wave2[i], "o", mfc="None", c=wave_colors[i],
-                              label=str(i + 1) + "th marker")
+                              label="#" + str(i + 1))
             X = sm.add_constant(self.wave2)
             re = sm.OLS(self.for_wave2[i], X).fit()
             # print(re.params)
@@ -459,6 +459,7 @@ class Application(tk.Frame):
         self.dicom1 = pydicom.dcmread(self.open_files[0])
         self.dicom2 = pydicom.dcmread(self.open_files[1])
         self.id = self.dicom1.PatientID
+        self.update_show_rois("ID: " + str(self.id) + "\n")
         self.SOPUID = []
         self.study_date = [self.dicom1.StudyDate, self.dicom2.StudyDate]
         # print(self.study_date)

@@ -5,6 +5,8 @@ import numpy as np
 
 def track_MIL(roi,array):
     history=[]
+    global groi
+    groi = roi
     # roi = tuple(roi)
     history.append(list(roi))
     before = array[0, :, :]
@@ -29,32 +31,17 @@ def track_MIL(roi,array):
             print(ok)
             print(bbox)
 
-        """
-        if ok:
-            print(i, bbox)
-            p1 = (int(bbox[0]), int(bbox[1]))
-            p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-            c = patches.Rectangle(xy=(bbox[0], bbox[1]), width=bbox[2], height=bbox[3], ec='white', fill=False)
-            fig = plt.figure()
-            ax = plt.axes()
-            ax.add_patch(c)
-            ax.imshow(array[i + 1, :, :], cmap='Greys', vmax=5000)
-            plt.savefig("./app2_fig_3/" + str(i) + ".png")
-            plt.close()
-        else:
-            fig = plt.figure()
-            ax = plt.axes()
-            ax.imshow(array[i + 1, :, :], cmap='Greys', vmax=5000)
-            plt.text(2, 3, "Target Lost")
-            plt.savefig("./app2_fig_3/" + str(i) + ".png")
-            plt.close()
-        """
 
     # print(history)
     return history
 
 
 def from_f32_to_uint8(img):
-    img2 = cv2.convertScaleAbs(img, alpha=(255.0 / np.max(img)))
-    img2 = img2.astype(np.uint8)
+
+    img3 = cv2.convertScaleAbs(img, alpha=(255.0/np.max(img)))
+    shrinked_img = cv2.adaptiveThreshold(img3, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,11,2)
+
+    img2 = shrinked_img.astype(np.uint8)
+
+
     return img2
