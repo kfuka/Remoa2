@@ -34,7 +34,7 @@ class build_report:
         self.colour_table = self.return_colour_table(self.table1)
         # self.plot_table_fig()
         self.plot_table_dyn()
-        self.create_fig3()
+        self.create_fig3_dyn()
         # self.create_fig4()
         self.create_fig4_dyn()
         self.create_html()
@@ -233,6 +233,35 @@ class build_report:
 
         table_fig.savefig(self.table_file)
 
+
+    def create_fig3_dyn(self):
+        fig3 = plt.figure(figsize=(8, 16))
+        new_times = self.new_times
+
+        figure_number = len(self.time1s)
+        for i in range(figure_number):
+            ax1_3 = fig3.add_subplot(figure_number,2,(i+1)*2-1)
+            ax1_3.plot(self.time1s[i], self.x1s[i], "o", label="resp.", c="r", alpha=0.5)
+            for j in range(np.array(self.y1s).shape[1]):
+                ax1_3.plot(self.time1s[i], self.y1s[i][j], "-.", label="#"+str(j+1), c=wave_colors[j])
+            ax1_3.set_title("Acq. time: " + str(new_times[i][0]))
+            ax1_3.set_ylabel("Resp. Phase")
+            ax1_3.set_xlabel("Time (sec.)")
+            ax1_3.legend()
+
+            axy1_3 = fig3.add_subplot(figure_number, 2, (i+1)*2)
+            axy1_3.plot(self.time2s[i], self.x2s[i], "o", label="resp.", c="r", alpha=0.5)
+            for j in range(np.array(self.y2s).shape[1]):
+                axy1_3.plot(self.time2s[i], self.y2s[i][j], "-.", label="#" + str(j + 1), c=wave_colors[j])
+            axy1_3.set_title("Acq. time: " + new_times[i][1])
+            axy1_3.set_ylabel("Resp. Phase")
+            axy1_3.set_xlabel("Time (sec.)")
+            axy1_3.legend()
+
+        plt.tight_layout()
+        fig3.savefig(self.resp_file)
+
+
     def create_fig3(self):
         """
         create respiratory graph but not used now.
@@ -339,7 +368,7 @@ class build_report:
         x_1_2_flat = np.ravel(x1_2)
         y_1_2_2d =[]
         for j in range(y1_2.shape[1]):
-            some_y = y1_2[:,j,:]
+            some_y = y1_2[:, j, :]
             y_1_2_2d.append(np.ravel(some_y))
 
         fig4 = plt.figure(figsize=(8,8))
