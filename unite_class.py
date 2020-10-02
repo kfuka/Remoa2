@@ -12,6 +12,7 @@ from statsmodels.sandbox.regression.predstd import wls_prediction_std
 import os
 
 wave_colors = ["g", "b", "c", "m", "y", "k", "w"]
+threshold = 0.6
 
 
 class build_report:
@@ -79,7 +80,8 @@ class build_report:
         :return:
         """
         uids = []
-        table1 = np.zeros(4 * len(self.file_list) * 7).reshape((4, len(self.file_list) + 2, 5))
+        #table1 = np.zeros(4 * len(self.file_list) * 7).reshape((4, len(self.file_list) + 2, 5))
+        table1 = np.zeros(4 * 5 * 7).reshape((4, 5 + 2, 5))
         time1s = []
         x1s = []
         y1s = []
@@ -363,23 +365,43 @@ class build_report:
         y1s = np.array(self.y1s)
         x2s = np.array(self.x2s)
         y2s = np.array(self.y2s)
+
+        """
         x1_2 = np.concatenate([x1s, x2s], 1)
         y1_2 = np.concatenate([y1s, y2s], 2)
         x_1_2_flat = np.ravel(x1_2)
-        y_1_2_2d =[]
-        for j in range(y1_2.shape[1]):
+        y_1_2_2d = []
+        for j in range(y1_2.shape[1]): #マーカーの数だけ
             some_y = y1_2[:, j, :]
             y_1_2_2d.append(np.ravel(some_y))
+        """
+        newx1s, newy1s = [],[]
+        for j in range(y1s.shape[1]): #マーカー数
+            x1_for_a_marker = []
+            y1_for_a_marker = []
+            for i in range(x1s.shape[0]): #測定繰り返し数
+                if np.corrcoef(x1s[i,:],y1s[i,j,:])[0,1] > threshold:
+                    x1_for_a_marker = np.concatenate([x1_for_a_marker, x1s[i,:]])
+                    y1_for_a_marker = np.concatenate([y1_for_a_marker, y1s[i,j,:]])
+                if np.corrcoef(x2s[i,:],y2s[i,j,:])[0,1] > threshold:
+                    x1_for_a_marker = np.concatenate([x1_for_a_marker, x2s[i, :]])
+                    y1_for_a_marker = np.concatenate([y1_for_a_marker, y2s[i, j, :]])
+            newx1s.append(x1_for_a_marker)
+            newy1s.append(y1_for_a_marker)
+
+
+        x_1_2_flat = newx1s
+        y_1_2_2d = newy1s
 
         fig4 = plt.figure(figsize=(8,8))
-        for i in range(len(y_1_2_2d)):
+        for i in range(len(y_1_2_2d)): #iはマーカーの数
             v=i+1
             ax1 = fig4.add_subplot(2, 2, v)
-            ax1.plot(x_1_2_flat, y_1_2_2d[i], "o", c=wave_colors[i], mfc="None", alpha=0.5)
+            ax1.plot(x_1_2_flat[i], y_1_2_2d[i], "o", c=wave_colors[i], mfc="None", alpha=0.5)
             ax1.set_xlabel("Resp. phase (%)")
             ax1.set_ylabel("Marker phase (%)")
             ax1.set_title("Marker #"+str(i+1),c=wave_colors[i])
-            X1 = sm.add_constant(x_1_2_flat)
+            X1 = sm.add_constant(x_1_2_flat[i])
             re1 = sm.OLS(y_1_2_2d[i], X1).fit()
             x1_pred_o = np.linspace(-5, 105, 110)
             x1_pred = sm.add_constant(x1_pred_o)

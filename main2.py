@@ -337,6 +337,7 @@ class Application(tk.Frame):
         self.show_rois.insert("end", '#: fit, lwr, upr, Predict' + "\n")
         self.save_data["state"] = "active"
         for i in range(len(self.roi_center1)):
+            # print(np.corrcoef(self.wave1, self.for_wave1)[0,1])
             self.cor_ax1.plot(self.wave1, self.for_wave1[i], "o", mfc="None", c=wave_colors[i],
                               label="#" + str(i + 1))
             X = sm.add_constant(self.wave1)
@@ -361,6 +362,7 @@ class Application(tk.Frame):
         self.cor_ax1.set_ylim(-5, 105)
 
         for i in range(len(self.roi_center2)):
+            # print(np.corrcoef(self.wave2, self.for_wave2)[0,1])
             self.cor_ax2.plot(self.wave2, self.for_wave2[i], "o", mfc="None", c=wave_colors[i],
                               label="#" + str(i + 1))
             X = sm.add_constant(self.wave2)
