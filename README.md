@@ -8,7 +8,9 @@ By checking the marker position manually in the first image, then the CSRT track
 The input file should be one pair of DICOM files that have multiple continuous fluoroscopic images. Of two Dicom files, one is from horizontal, and another is from vertical exposure.
 
 
-Reference
-CSRT: Lukezic, A., Vojir, T., ˇCehovin Zajc, L., Matas, J., & Kristan, M. (2017). Discriminative correlation filter with channel and spatial reliability. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (pp. 6309-6318).
+
+Reference  
+
+CSRT: Lukezic, A., Vojir, T., ˇCehovin Zajc, L., Matas, J., & Kristan, M. (2017). Discriminative correlation filter with channel and spatial reliability. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (pp. 6309-6318).  
 
 Open-CV: https://opencv.org/
