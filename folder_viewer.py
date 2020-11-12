@@ -5,8 +5,9 @@ User be asked to select two dicom files.
 """
 
 import glob
-import pydicom
 import tkinter as tk
+
+import pydicom
 
 
 def get_wave_dicoms(folder_name):
@@ -31,6 +32,7 @@ class DicomSelectGui(tk.Frame):
     """
     Open dicom selecting GUI
     """
+
     def __init__(self, dicoms, master):
         """
         initialize gui
@@ -75,7 +77,7 @@ class DicomSelectGui(tk.Frame):
                 self.dicom[i][1][0][:2] + ":" + self.dicom[i][1][0][2:4] + ":" + self.dicom[i][1][0][4:6]))
             label2.grid(row=i + 2, column=1, padx=10)
             label3 = tk.Label(self.frame, text=str(self.dicom[i][1][1]))
-            label3.grid(row=i+2, column=3, padx=10)
+            label3.grid(row=i + 2, column=3, padx=10)
         exe_button = tk.Button(self.frame, text="open", command=self.dicom_open)
         exe_button.grid(row=len(self.dicom) + 2, column=0)
 

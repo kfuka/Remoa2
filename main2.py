@@ -1,38 +1,45 @@
+import configparser
+import os
+import subprocess
+import time
 import tkinter as tk
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from matplotlib.figure import Figure
+from tkinter import filedialog
+from tkinter import messagebox
+
+import matplotlib.animation as animation
+import matplotlib.patches as pat
 import matplotlib.pyplot as plt
 import numpy as np
 import pydicom
-import matplotlib.patches as pat
-import matplotlib.animation as animation
-from tkinter import filedialog
-from tkinter import messagebox
-from scipy import signal
 import statsmodels.api as sm
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.figure import Figure
+from scipy import signal
 from statsmodels.sandbox.regression.predstd import wls_prediction_std
-import os
-import time
-import configparser
-import subprocess
-import cv2
 
-import mil_tracker
-import wave_analysis
+import csrt_tracker
 import folder_viewer
 import unite_class
-
+import wave_analysis
 
 config = configparser.ConfigParser()
 config.read('./config.ini')
-roi_size = int(config.get("settings","roi_size"))
+roi_size = int(config.get("settings", "roi_size"))
 wave_colors = ["g", "b", "c", "m", "y", "k", "w"]
 data_base_folder = config.get("settings", "database_path")
 spacing_correction_factor = 1.5 * 1550 / 2111.63
 
 
 class Application(tk.Frame):
+    """
+    Main application
+    """
+
     def __init__(self, master=None):
+        """
+        initialize
+        :param master:
+        """
         self.roi_center1 = []
         self.roi_center2 = []
         self.for_wave1 = []
@@ -48,6 +55,10 @@ class Application(tk.Frame):
         self.rpress2 = None
 
     def create_widgets(self):
+        """
+        create tk wigdets
+        :return: nothing
+        """
         self.canvas_frame1 = tk.Frame(self.master)
         self.canvas_frame1.grid(row=0, column=0, rowspan=2)
         self.canvas_frame2 = tk.Frame(self.master)
@@ -96,7 +107,7 @@ class Application(tk.Frame):
         self.x_scale = tk.Scale(self.control_frame,
                                 variable=self.x_v,
                                 from_=10000,
-                                to=0,
+                                to=-2000,
                                 resolution=100,
                                 orient=tk.VERTICAL,
                                 length=500,
@@ -107,7 +118,7 @@ class Application(tk.Frame):
         self.x_scale2 = tk.Scale(self.control_frame2,
                                  variable=self.x_v2,
                                  from_=10000,
-                                 to=0,
+                                 to=-2000,
                                  resolution=100,
                                  orient=tk.VERTICAL,
                                  length=500,
@@ -131,7 +142,7 @@ class Application(tk.Frame):
         self.y_scale = tk.Scale(self.control_frame,
                                 variable=self.y_v,
                                 from_=10000,
-                                to=0,
+                                to=-2000,
                                 resolution=100,
                                 orient=tk.VERTICAL,
                                 showvalue=0,
@@ -141,7 +152,7 @@ class Application(tk.Frame):
         self.y_scale2 = tk.Scale(self.control_frame2,
                                  variable=self.y_v2,
                                  from_=10000,
-                                 to=0,
+                                 to=-2000,
                                  resolution=100,
                                  orient=tk.VERTICAL,
                                  showvalue=0,
@@ -184,8 +195,11 @@ class Application(tk.Frame):
         self.show_animation["state"] = "disable"
         self.patient_folder["state"] = "disable"
 
-
     def go_quit(self):
+        """
+        quit application
+        :return:
+        """
         root.quit()
         root.destroy()
 
@@ -199,22 +213,22 @@ class Application(tk.Frame):
         if not os.path.isdir(directory_path):
             os.mkdir(directory_path)
         np.savez(directory_path + "/" + str(self.SOPUID[0]),
-                 time1 = self.wave_time1,
+                 time1=self.wave_time1,
                  x1=self.wave1,
                  y1=self.for_wave1,
-                 time2 = self.wave_time2,
+                 time2=self.wave_time2,
                  x2=self.wave2,
                  y2=self.for_wave2,
                  UID=self.SOPUID,
-                 max_x1 = self.max_x1,
-                 max_x2 = self.max_x2,
-                 max_y1 = self.max_y1,
-                 max_y2 = self.max_y2,
-                 actime = self.actime,
-                 study_date = self.study_date)
-        fig = plt.figure(figsize=(8,4))
-        ax1 = fig.add_subplot(1,2,1)
-        ax2 = fig.add_subplot(1,2,2)
+                 max_x1=self.max_x1,
+                 max_x2=self.max_x2,
+                 max_y1=self.max_y1,
+                 max_y2=self.max_y2,
+                 actime=self.actime,
+                 study_date=self.study_date)
+        fig = plt.figure(figsize=(8, 4))
+        ax1 = fig.add_subplot(1, 2, 1)
+        ax2 = fig.add_subplot(1, 2, 2)
         ax1.imshow(self.array1[0, :, :], vmin=self.vmin, vmax=self.vmax, cmap="Greys")
         ax1.axis("off")
         fig.tight_layout()
@@ -226,7 +240,7 @@ class Application(tk.Frame):
                                      lw=2)
                 ax1.add_patch(rect)
                 ax1.text(point[0] + roi_size / 2 + 10, point[1] + roi_size / 2, str(roinum), size=12,
-                              color=wave_colors[i])
+                         color=wave_colors[i])
                 roinum += 1
         ax1.set_xlim([self.xlimlow1, self.xlimhigh1])
         ax1.set_ylim([self.ylimhigh1, self.ylimlow1])
@@ -242,7 +256,7 @@ class Application(tk.Frame):
                                      lw=2)
                 ax2.add_patch(rect)
                 ax2.text(point[0] + roi_size / 2 + 10, point[1] + roi_size / 2, str(roinum), size=12,
-                              color=wave_colors[i])
+                         color=wave_colors[i])
                 roinum += 1
         ax2.set_xlim([self.xlimlow2, self.xlimhigh2])
         ax2.set_ylim([self.ylimhigh2, self.ylimlow2])
@@ -274,7 +288,7 @@ class Application(tk.Frame):
             # self.update_show_rois("Vert L-R, S-I\n")
 
             for i in range(len(self.roi_center1)):
-                returned = mil_tracker.track_MIL(
+                returned = csrt_tracker.track_MIL(
                     (self.roi_center1[i][0] - roi_size / 2, self.roi_center1[i][1] - roi_size / 2, roi_size, roi_size),
                     self.array1, self.SOPUID[0], self.id, i)
                 x_shifts = np.array([it[0] for it in returned])
@@ -299,13 +313,13 @@ class Application(tk.Frame):
                     self.show_rois.insert("end", f"{max_y_move:.2f}" + "\n")
                 """
                 calcd_wave = np.array(y_shifts - np.min(y_shifts)) / np.max(y_shifts - np.min(y_shifts)) * 100
-                calcd_wave = np.delete(calcd_wave,0)
+                calcd_wave = np.delete(calcd_wave, 0)
                 self.for_wave1.append(calcd_wave)
             # self.update_show_rois("Horiz A-P, S-I\n")
             for i in range(len(self.roi_center2)):
-                returned = mil_tracker.track_MIL(
+                returned = csrt_tracker.track_MIL(
                     (self.roi_center2[i][0] - roi_size / 2, self.roi_center2[i][1] - roi_size / 2, roi_size, roi_size),
-                    self.array2, self.SOPUID[0], self.id, i+4)
+                    self.array2, self.SOPUID[0], self.id, i + 4)
                 x_shifts = np.array([it[0] for it in returned])
                 y_shifts = np.array([it[1] for it in returned])
                 # savgol fileter
@@ -316,41 +330,11 @@ class Application(tk.Frame):
                 max_y_move = (np.max(y_shifts) - np.min(y_shifts)) * self.pixel_spacing2[1]
                 max_x2.append(max_x_move)
                 max_y2.append(max_y_move)
-                """
-                self.update_show_rois("R" + str(i + 1) + ": ")
-                if max_x_move > 5.0:
-                    self.show_rois.insert("end", f"{max_x_move:.2f}" + ", ", "over")
-                else:
-                    self.show_rois.insert("end", f"{max_x_move:.2f}" + ", ")
-                if max_y_move > 5.0:
-                    self.show_rois.insert("end", f"{max_y_move:.2f}" + "\n", "over")
-                else:
-                    self.show_rois.insert("end", f"{max_y_move:.2f}" + "\n")
-                """
+
                 calcd_wave = np.array(y_shifts - np.min(y_shifts)) / np.max(y_shifts - np.min(y_shifts)) * 100
                 calcd_wave = np.delete(calcd_wave, 0)
                 self.for_wave2.append(calcd_wave)
-            """
-            self.show_rois.insert("end", "-----------------\n")
-            self.show_rois.insert("end", "#: L-R, A-P, SI, 3D norm (mm)\n")
-            for i in range(len(max_x1)):
-                self.show_rois.insert("end", str(i + 1) + ": ")
-                if max_x1[i] > 5.0:
-                    self.show_rois.insert("end", f"{max_x1[i]:.2f}" + ", ", "over")
-                else:
-                    self.show_rois.insert("end", f"{max_x1[i]:.2f}" + ", ")
-                if max_x2[i] > 5.0:
-                    self.show_rois.insert("end", f"{max_x2[i]:.2f}" + ", ", "over")
-                else:
-                    self.show_rois.insert("end", f"{max_x2[i]:.2f}" + ", ")
-                si_large = max(max_y1[i], max_y2[i])
-                if si_large > 5.0:
-                    self.show_rois.insert("end", f"{si_large:.2f}" + ", ", "over")
-                else:
-                    self.show_rois.insert("end", f"{si_large:.2f}" + ", ")
-                self.show_rois.insert("end", f"{np.sqrt(max_x1[i] ** 2 + max_x2[i] ** 2 + si_large ** 2):.2f}" + "\n")
-            self.show_rois.insert("end", "-----------------\n")
-            """
+
             LR_from_center = []
             AP_from_center = []
             for x1 in self.marker_chase:
@@ -373,7 +357,7 @@ class Application(tk.Frame):
             print_out = {}
             for i in range(len(c_max_x1)):
                 print_out[str(i)] = [c_max_x1[i], c_max_x2[i], max(c_max_y1[i], c_max_y2[i]),
-                                     np.sqrt(c_max_x1[i]**2 + c_max_x2[i]**2 + max(c_max_y1[i], c_max_y2[i]**2))]
+                                     np.sqrt(c_max_x1[i] ** 2 + c_max_x2[i] ** 2 + max(c_max_y1[i], c_max_y2[i] ** 2))]
 
             self.show_rois.insert("end", "#: L-R, A-P, SI, 3D norm (mm)\n")
             for n, val in enumerate(print_out.values()):
@@ -385,10 +369,15 @@ class Application(tk.Frame):
                         self.show_rois.insert("end", f"{v:.2f}" + ", ")
                 self.show_rois.insert("end", "\n")
 
-
         self.plot_wave()
 
     def LRAP_correction(self, val_iso, distance):
+        """
+        return correction factor for ISO center to marker position
+        :param val_iso: source to isocenter distance in mm
+        :param distance: isocenter to maeker distance in mm
+        :return: correction factor
+        """
         return (1550.0 + distance) / 1550.0 * val_iso
 
     def close_dicom(self):
@@ -479,7 +468,6 @@ class Application(tk.Frame):
         ax2.set_title("Horizontal beam")
         fig_func.tight_layout()
 
-
         def update(i):
             if i != 0:
                 plt.cla()
@@ -494,7 +482,7 @@ class Application(tk.Frame):
             g1scale = 255.0 / (self.vmax - self.vmin)
             gif_array_1 = (gif_array_1 - self.vmin) * g1scale
             ax.imshow(gif_array_1, cmap="Greys", vmin=self.vmin * g1scale, vmax=self.vmax * g1scale)
-            #ax.imshow(self.array1[i, :, :], cmap="Greys", vmin=self.vmin, vmax=self.vmax)
+            # ax.imshow(self.array1[i, :, :], cmap="Greys", vmin=self.vmin, vmax=self.vmax)
             gif_array_2 = self.array2[i, :, :]
             g2scale = 255.0 / (self.vmax2 - self.vmin2)
             gif_array_2 = (gif_array_2 - self.vmin2) * g2scale
@@ -525,7 +513,7 @@ class Application(tk.Frame):
         ami = animation.FuncAnimation(fig_func, update, frames=len(self.array1), interval=80)
 
         def save_gif():
-            ami.save( data_base_folder + self.id + "/" + str(self.SOPUID[0]) + ".gif", writer="pillow", fps=10, dpi=300)
+            ami.save(data_base_folder + self.id + "/" + str(self.SOPUID[0]) + ".gif", writer="pillow", fps=10, dpi=300)
             self.update_show_rois("animation saved in gif" + "\n")
 
         save_gif()
@@ -542,8 +530,6 @@ class Application(tk.Frame):
         self.update_show_rois("3. Calculate!\n")
         self.update_show_rois("---------------\n")
         self.marker_chase, self.marker_chase2 = None, None
-
-
 
         init_dir = config.get("settings", "dicom_folder")
         dicom_dir = tk.filedialog.askdirectory(initialdir=init_dir)
@@ -570,7 +556,6 @@ class Application(tk.Frame):
             self.dicom1 = dicom2
             self.dicom2 = dicom1
 
-
         self.id = self.dicom1.PatientID
         self.update_show_rois("ID: " + str(self.id) + "\n")
         self.SOPUID = []
@@ -578,6 +563,7 @@ class Application(tk.Frame):
         # print(self.study_date)
         self.SOPUID.append(self.dicom1[0x0008, 0x0018].value)
         self.SOPUID.append(self.dicom2[0x0008, 0x0018].value)
+        self.current_slice = 0
 
         self.wave1, self.wave_time1 = wave_analysis.wave_analysis(self.dicom1)
         self.wave2, self.wave_time2 = wave_analysis.wave_analysis(self.dicom2)
@@ -599,13 +585,12 @@ class Application(tk.Frame):
         self.vmax2 = np.max(7000)
         self.x_v.set(self.vmin)
         self.y_v.set(self.vmax)
-        self.current_slice = 0
         self.plot_image1(self.array1)
         self.plot_image2(self.array2)
         self.pixel_spacing1 = np.array([float(self.dicom1.PixelSpacing[0]),
                                         float(self.dicom1.PixelSpacing[1])]) * spacing_correction_factor
         self.pixel_spacing2 = np.array([float(self.dicom2.PixelSpacing[0]),
-                                       float(self.dicom2.PixelSpacing[1])]) * spacing_correction_factor
+                                        float(self.dicom2.PixelSpacing[1])]) * spacing_correction_factor
         self.actime = [self.dicom1.AcquisitionTime, self.dicom2.AcquisitionTime]
 
     def plot_image1(self, array):
@@ -630,7 +615,8 @@ class Application(tk.Frame):
                 rect = pat.Rectangle(xy=x_y, width=roi_size, height=roi_size, edgecolor=wave_colors[i], fill=False,
                                      lw=2)
                 self.ax1.add_patch(rect)
-                self.ax1.text(point[0][self.current_slice] + 40, point[1][self.current_slice] + 30, str(roinum), size=12,
+                self.ax1.text(point[0][self.current_slice] + 40, point[1][self.current_slice] + 30, str(roinum),
+                              size=12,
                               color=wave_colors[i])
                 roinum += 1
         self.ax1.set_xlim([self.xlimlow1, self.xlimhigh1])
@@ -660,7 +646,8 @@ class Application(tk.Frame):
                 rect = pat.Rectangle(xy=x_y, width=roi_size, height=roi_size, edgecolor=wave_colors[i], fill=False,
                                      lw=2)
                 self.ax2.add_patch(rect)
-                self.ax2.text(point[0][self.current_slice] + 40, point[1][self.current_slice] + 30, str(roinum), size=12,
+                self.ax2.text(point[0][self.current_slice] + 40, point[1][self.current_slice] + 30, str(roinum),
+                              size=12,
                               color=wave_colors[i])
                 roinum += 1
         self.ax2.set_xlim([self.xlimlow2, self.xlimhigh2])
@@ -685,6 +672,17 @@ class Application(tk.Frame):
 
         self.wave_ax.plot(self.wave_time1, self.wave1, "o", label="Resp. data", c="r", alpha=0.5)
         self.wave_ax2.plot(self.wave_time2, self.wave2, "o", label="Resp. data", c="r", alpha=0.5)
+        if self.current_slice == 29:
+            self.wave_ax.plot(self.wave_time1[28], self.wave1[28], "o",
+                              c="blue", mfc="None", markeredgewidth=2)
+            self.wave_ax2.plot(self.wave_time2[28], self.wave2[28], "o",
+                               c="blue", mfc="None", markeredgewidth=2)
+        else:
+            self.wave_ax.plot(self.wave_time1[self.current_slice], self.wave1[self.current_slice], "o",
+                              c="blue", mfc="None", markeredgewidth=2)
+            self.wave_ax2.plot(self.wave_time2[self.current_slice], self.wave2[self.current_slice], "o",
+                               c="blue", mfc="None", markeredgewidth=2)
+
         wave1_max = max(self.wave_time1)
         wave2_max = max(self.wave_time2)
         self.wave_ax.set_xlim(0, wave1_max)
@@ -738,6 +736,11 @@ class Application(tk.Frame):
         self.show_rois.insert(tk.END, roitext)
 
     def mouse_scrolled1(self, event):
+        """
+        by scrolling the mouse, the visualized x-ray image will zoom in/out.
+        :param event: tk mouse scroll event
+        :return:
+        """
         zoom_factor = 0.05
         if event.button == "up":
             diff1 = (self.xlimhigh1 - self.xlimlow1) / 2.0
@@ -746,14 +749,14 @@ class Application(tk.Frame):
             self.xlimlow1 = self.xlimlow1 + diff1 * zoom_factor
             self.ylimhigh1 = self.ylimhigh1 - diff2 * zoom_factor
             self.ylimlow1 = self.ylimlow1 + diff2 * zoom_factor
-            #here
+            # here
             diff1 = (self.xlimhigh2 - self.xlimlow2) / 2.0
             diff2 = (self.ylimhigh2 - self.ylimlow2) / 2.0
             self.xlimhigh2 = self.xlimhigh2 - diff1 * zoom_factor
             self.xlimlow2 = self.xlimlow2 + diff1 * zoom_factor
             self.ylimhigh2 = self.ylimhigh2 - diff2 * zoom_factor
             self.ylimlow2 = self.ylimlow2 + diff2 * zoom_factor
-            #tohere
+            # tohere
         else:
             diff1 = (self.xlimhigh1 - self.xlimlow1) / 2.0
             diff2 = (self.ylimhigh1 - self.ylimlow1) / 2.0
@@ -761,14 +764,14 @@ class Application(tk.Frame):
             self.xlimlow1 = self.xlimlow1 - diff1 * zoom_factor
             self.ylimhigh1 = self.ylimhigh1 + diff2 * zoom_factor
             self.ylimlow1 = self.ylimlow1 - diff2 * zoom_factor
-            #here
+            # here
             diff1 = (self.xlimhigh2 - self.xlimlow2) / 2.0
             diff2 = (self.ylimhigh2 - self.ylimlow2) / 2.0
             self.xlimhigh2 = self.xlimhigh2 + diff1 * zoom_factor
             self.xlimlow2 = self.xlimlow2 - diff1 * zoom_factor
             self.ylimhigh2 = self.ylimhigh2 + diff2 * zoom_factor
             self.ylimlow2 = self.ylimlow2 - diff2 * zoom_factor
-            #tohere
+            # tohere
         self.plot_image1(self.array1)
         self.plot_image2(self.array2)
 
@@ -815,7 +818,6 @@ class Application(tk.Frame):
             msgrt = tk.Tk()
             msgrt.withdraw()
             res = messagebox.showinfo("info", "choose ROI in the first slice")
-
 
     def onclick2(self, event):
         if event.button == 3:
@@ -873,14 +875,20 @@ class Application(tk.Frame):
         self.slice_num.set(0)
 
     def draw_plot(self, event=None):
-
-        self.vmin = self.x_v.get()
         self.vmax = self.y_v.get()
-        self.vmin2 = self.x_v2.get()
+        self.vmin = self.x_v.get()
+        if self.vmin > self.vmax:
+            self.vmin = self.vmax - 10
+            self.x_v.set(self.vmax - 10)
         self.vmax2 = self.y_v2.get()
+        self.vmin2 = self.x_v2.get()
+        if self.vmin2 > self.vmax2:
+            self.vmin2 = self.vmax2 - 10
+            self.x_v2.set(self.vmax2 - 10)
         self.current_slice = self.slice_num.get()
         self.plot_image1(self.array1)
         self.plot_image2(self.array2)
+        self.plot_wave()
 
     def init_draw(self):
         global h
