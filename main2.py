@@ -22,9 +22,11 @@ import folder_viewer
 import unite_class
 import wave_analysis
 
+
 config = configparser.ConfigParser()
 config.read('./config.ini')
 roi_size = int(config.get("settings", "roi_size"))
+save_mpeg4 = config.get("settings", "save_mpeg4")
 wave_colors = ["g", "b", "c", "m", "y", "k", "w"]
 data_base_folder = config.get("settings", "database_path")
 spacing_correction_factor = 1.5 * 1550 / 2111.63
@@ -478,16 +480,16 @@ class Application(tk.Frame):
             ax.set_title("Vertical beam")
             ax2.set_title("Horizontal beam")
 
-            gif_array_1 = self.array1[i, :, :]
-            g1scale = 255.0 / (self.vmax - self.vmin)
-            gif_array_1 = (gif_array_1 - self.vmin) * g1scale
-            ax.imshow(gif_array_1, cmap="Greys", vmin=self.vmin * g1scale, vmax=self.vmax * g1scale)
-            # ax.imshow(self.array1[i, :, :], cmap="Greys", vmin=self.vmin, vmax=self.vmax)
-            gif_array_2 = self.array2[i, :, :]
-            g2scale = 255.0 / (self.vmax2 - self.vmin2)
-            gif_array_2 = (gif_array_2 - self.vmin2) * g2scale
-            ax2.imshow(gif_array_2, cmap="Greys", vmin=self.vmin2 * g2scale, vmax=self.vmax2 * g2scale)
-            # ax2.imshow(self.array2[i, :, :], cmap="Greys", vmin=self.vmin2, vmax=self.vmax2)
+            # gif_array_1 = self.array1[i, :, :]
+            # g1scale = 255.0 / (self.vmax - self.vmin)
+            # gif_array_1 = (gif_array_1 - self.vmin) * g1scale
+            # ax.imshow(gif_array_1, cmap="Greys", vmin=self.vmin * g1scale, vmax=self.vmax * g1scale)
+            ax.imshow(self.array1[i, :, :], cmap="Greys", vmin=self.vmin, vmax=self.vmax)
+            # gif_array_2 = self.array2[i, :, :]
+            # g2scale = 255.0 / (self.vmax2 - self.vmin2)
+            # gif_array_2 = (gif_array_2 - self.vmin2) * g2scale
+            # ax2.imshow(gif_array_2, cmap="Greys", vmin=self.vmin2 * g2scale, vmax=self.vmax2 * g2scale)
+            ax2.imshow(self.array2[i, :, :], cmap="Greys", vmin=self.vmin2, vmax=self.vmax2)
             for j in range(len(self.marker_chase)):
                 x_y = (self.marker_chase[j][0][i], self.marker_chase[j][1][i])
                 rect = pat.Rectangle(xy=x_y, width=roi_size, height=roi_size, edgecolor=wave_colors[j], fill=False,
@@ -514,7 +516,9 @@ class Application(tk.Frame):
 
         def save_gif():
             ami.save(data_base_folder + self.id + "/" + str(self.SOPUID[0]) + ".gif", writer="pillow", fps=10, dpi=300)
-            self.update_show_rois("animation saved in gif" + "\n")
+            if save_mpeg4 == "yes":
+                ami.save(data_base_folder + self.id + "/" + str(self.SOPUID[0]) + ".mp4", writer="ffmpeg", fps=10, dpi=300)
+            self.update_show_rois("animation saved" + "\n")
 
         save_gif()
 
