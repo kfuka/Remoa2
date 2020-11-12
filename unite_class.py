@@ -10,9 +10,14 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from statsmodels.sandbox.regression.predstd import wls_prediction_std
 import os
+import configparser
 
 wave_colors = ["g", "b", "c", "m", "y", "k", "w"]
-threshold = 0.6
+config = configparser.ConfigParser()
+config.read('./config.ini')
+# print(np.float(config.get("settings", "threshold_of_corr_coef")))
+
+threshold = np.float(config.get("settings", "threshold_of_corr_coef"))
 
 
 class build_report:
@@ -110,16 +115,25 @@ class build_report:
             for j in range(len(opened["max_y2"])):
                 table1[j, i, 3] = opened["max_y2"][j]
 
-
             for j in range(len(table1)):
                 table1[j, i, 4] = np.sqrt(
                     table1[j, i, 0] ** 2 + table1[j, i, 2] ** 2 + max(table1[j, i, 1], table1[j, i, 3]) ** 2)
 
         for mai in range(table1.shape[0]):
+            active_gyo = 0
+            for in_gyo in range(5):
+                a_gyo = table1[mai, in_gyo, :]
+                if not all(a_gyo == 0):
+                    active_gyo += 1
+
             for yoko in range(table1.shape[2]):
-                table1[mai, 5, yoko] = np.mean(table1[mai, :5, yoko])
-                table1[mai, 6, yoko] = np.std(table1[mai, :5, yoko], ddof=1)
-        table1 = np.round(table1,2)
+                if active_gyo != 0:
+                    table1[mai, 5, yoko] = np.mean(table1[mai, :active_gyo, yoko])
+                    table1[mai, 6, yoko] = np.std(table1[mai, :active_gyo, yoko], ddof=1)
+                else:
+                    table1[mai, 5, yoko] = 0
+                    table1[mai, 6, yoko] = 0
+        table1 = np.round(table1, 2)
 
         self.time1s = time1s
         self.x1s = x1s
@@ -147,10 +161,11 @@ class build_report:
         for k in range(len(table1[:, 0, 0])):
             for i in range(len(table1[0, :, 0])):
                 for j in range(len(table1[0, 0, :])):
-                    if i >= 5 or j >= 4:
+                    if i >= 5:
+                        colour_table[k, i, j] = "lightgrey"
+                    elif j >= 4:
                         colour_table[k, i, j] = "white"
-                        continue
-                    if table1[k, i, j] > 5.0:
+                    elif table1[k, i, j] > 5.0:
                         colour_table[k, i, j] = "yellow"
                     else:
                         colour_table[k, i, j] = "white"
@@ -161,23 +176,27 @@ class build_report:
         plot table dynamically.
         :return:
         """
-        table_fig=plt.figure(figsize=(8,4),dpi=100)
+        table_fig = plt.figure(figsize=(8, 4), dpi=100)
         for i in range(self.table1.shape[0]):
             v = i+1
-            col_labels = ["x_L", "SI_L", "x_R", "SI_R", "3D"]
+            # col_labels = ["x_L", "SI_L", "x_R", "SI_R", "3D"]
+            col_labels = ["LR", "SI_V", "AP", "SI_H", "3D"]
             row_labels = ["1", "2", "3", "4", "5", "mean", "std"]
-            ax1 = table_fig.add_subplot(2,2,v)
+            ax1 = table_fig.add_subplot(2, 2, v)
             t1 = ax1.table(cellText=self.table1[i, :, :], colLabels=col_labels,
-                                 rowLabels=row_labels, loc="center", cellColours=self.colour_table[i])
+                           rowLabels=row_labels, loc="center", cellColours=self.colour_table[i])
             t1.auto_set_font_size(False)
             t1.set_fontsize(10)
             t1.scale(1, 1)
             ax1.set_title("Marker motion #" + str(v) + " (mm)", color=wave_colors[i])
             ax1.set_axis_off()
+            cell_height = 1/8.0
+            for pos, cell in t1.get_celld().items():
+                cell.set_height(cell_height)
+
             plt.tight_layout()
             plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
             plt.tick_params(axis='y', which='both', right=False, left=False, labelleft=False)
-
             for pos in ['right', 'top', 'bottom', 'left']:
                 plt.gca().spines[pos].set_visible(False)
         table_fig.savefig(self.table_file)
@@ -237,12 +256,12 @@ class build_report:
 
 
     def create_fig3_dyn(self):
-        fig3 = plt.figure(figsize=(8, 16))
+        fig3 = plt.figure(figsize=(8, len(self.time1s)*4))
         new_times = self.new_times
 
         figure_number = len(self.time1s)
         for i in range(figure_number):
-            ax1_3 = fig3.add_subplot(figure_number,2,(i+1)*2-1)
+            ax1_3 = fig3.add_subplot(figure_number, 2, (i+1)*2-1)
             ax1_3.plot(self.time1s[i], self.x1s[i], "o", label="resp.", c="r", alpha=0.5)
             for j in range(np.array(self.y1s).shape[1]):
                 ax1_3.plot(self.time1s[i], self.y1s[i][j], "-.", label="#"+str(j+1), c=wave_colors[j])

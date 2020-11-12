@@ -58,9 +58,9 @@ class DicomSelectGui(tk.Frame):
         self.uid_label = tk.Label(self.frame, text="SOP Instance UID")
         self.title_label = tk.Label(self.frame, text="Select ONE PAIR of Dicom")
         self.title_label.grid(row=0, column=0, columnspan=3)
-        self.file_label.grid(row=1, column=1, pady=10)
+        self.file_label.grid(row=1, column=2, pady=10)
         self.uid_label.grid(row=1, column=3)
-        self.time_label.grid(row=1, column=2)
+        self.time_label.grid(row=1, column=1)
 
         for i in range(len(self.dicom)):
             bl = tk.BooleanVar()
@@ -69,11 +69,11 @@ class DicomSelectGui(tk.Frame):
             b.grid(row=i + 2, column=0)
             self.checkval.append(bl)
 
-            label = tk.Label(self.frame, text=str(self.dicom[i][0]))
-            label.grid(row=i + 2, column=1, padx=10)
+            label = tk.Label(self.frame, text=str(self.dicom[i][0]).split("/")[-1])
+            label.grid(row=i + 2, column=2, padx=10)
             label2 = tk.Label(self.frame, text=str(
                 self.dicom[i][1][0][:2] + ":" + self.dicom[i][1][0][2:4] + ":" + self.dicom[i][1][0][4:6]))
-            label2.grid(row=i + 2, column=2, padx=10)
+            label2.grid(row=i + 2, column=1, padx=10)
             label3 = tk.Label(self.frame, text=str(self.dicom[i][1][1]))
             label3.grid(row=i+2, column=3, padx=10)
         exe_button = tk.Button(self.frame, text="open", command=self.dicom_open)
