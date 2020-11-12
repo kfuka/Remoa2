@@ -7,6 +7,7 @@ import pydicom
 import matplotlib.patches as pat
 import matplotlib.animation as animation
 from tkinter import filedialog
+from tkinter import messagebox
 from scipy import signal
 import statsmodels.api as sm
 from statsmodels.sandbox.regression.predstd import wls_prediction_std
@@ -20,6 +21,7 @@ import mil_tracker
 import wave_analysis
 import folder_viewer
 import unite_class
+
 
 config = configparser.ConfigParser()
 config.read('./config.ini')
@@ -55,9 +57,11 @@ class Application(tk.Frame):
         self.control_frame2 = tk.Frame(self.master)
         self.control_frame2.grid(row=0, column=3, rowspan=2)
         self.wave_frame = tk.Frame(self.master)
-        self.wave_frame.grid(row=2, column=0, columnspan=1)
+        self.scroll_frame = tk.Frame(self.master)
+        self.scroll_frame.grid(row=2, column=0, columnspan=4)
+        self.wave_frame.grid(row=3, column=0, columnspan=1)
         self.wave_frame2 = tk.Frame(self.master)
-        self.wave_frame2.grid(row=2, column=2, columnspan=1)
+        self.wave_frame2.grid(row=3, column=2, columnspan=1)
         self.main_frame = tk.Frame(self.master)
         self.main_frame.grid(row=0, column=4, rowspan=4, sticky=tk.N)
 
@@ -88,6 +92,7 @@ class Application(tk.Frame):
 
         self.x_v = tk.IntVar()
         self.x_v2 = tk.IntVar()
+        self.slice_num = tk.IntVar()
         self.x_scale = tk.Scale(self.control_frame,
                                 variable=self.x_v,
                                 from_=10000,
@@ -109,6 +114,17 @@ class Application(tk.Frame):
                                  showvalu=0,
                                  command=self.draw_plot)
         self.x_scale2.grid(row=0, column=0, padx=0, pady=0, sticky=tk.W + tk.N + tk.S)
+
+        self.slice_scroll = tk.Scale(self.scroll_frame,
+                                     variable=self.slice_num,
+                                     from_=0,
+                                     to=29,
+                                     resolution=1,
+                                     orient=tk.HORIZONTAL,
+                                     length=800,
+                                     showvalu=0,
+                                     command=self.draw_plot)
+        self.slice_scroll.grid(row=0, column=0, padx=0, pady=0, sticky=tk.W + tk.N + tk.S + tk.E)
 
         self.y_v = tk.IntVar()
         self.y_v2 = tk.IntVar()
@@ -525,6 +541,7 @@ class Application(tk.Frame):
         self.update_show_rois("2. Click markers\n")
         self.update_show_rois("3. Calculate!\n")
         self.update_show_rois("---------------\n")
+        self.marker_chase, self.marker_chase2 = None, None
 
 
 
@@ -582,6 +599,7 @@ class Application(tk.Frame):
         self.vmax2 = np.max(7000)
         self.x_v.set(self.vmin)
         self.y_v.set(self.vmax)
+        self.current_slice = 0
         self.plot_image1(self.array1)
         self.plot_image2(self.array2)
         self.pixel_spacing1 = np.array([float(self.dicom1.PixelSpacing[0]),
@@ -592,10 +610,10 @@ class Application(tk.Frame):
 
     def plot_image1(self, array):
         self.ax1.cla()
-        self.ax1.imshow(array[0, :, :], vmin=self.vmin, vmax=self.vmax, cmap="Greys")
+        self.ax1.imshow(array[self.current_slice, :, :], vmin=self.vmin, vmax=self.vmax, cmap="Greys")
         self.ax1.axis("off")
         self.fig1.tight_layout()
-        if self.roi_center1:
+        if self.roi_center1 and self.current_slice == 0:
             roinum = 1
             for i, point in enumerate(self.roi_center1):
                 x_y = (point[0] - roi_size / 2, point[1] - roi_size / 2)
@@ -605,6 +623,16 @@ class Application(tk.Frame):
                 self.ax1.text(point[0] + roi_size / 2 + 10, point[1] + roi_size / 2, str(roinum), size=12,
                               color=wave_colors[i])
                 roinum += 1
+        elif self.marker_chase:
+            roinum = 1
+            for i, point in enumerate(self.marker_chase):
+                x_y = (point[0][self.current_slice], point[1][self.current_slice])
+                rect = pat.Rectangle(xy=x_y, width=roi_size, height=roi_size, edgecolor=wave_colors[i], fill=False,
+                                     lw=2)
+                self.ax1.add_patch(rect)
+                self.ax1.text(point[0][self.current_slice] + 40, point[1][self.current_slice] + 30, str(roinum), size=12,
+                              color=wave_colors[i])
+                roinum += 1
         self.ax1.set_xlim([self.xlimlow1, self.xlimhigh1])
         self.ax1.set_ylim([self.ylimhigh1, self.ylimlow1])
 
@@ -612,10 +640,10 @@ class Application(tk.Frame):
 
     def plot_image2(self, array):
         self.ax2.cla()
-        self.ax2.imshow(array[0, :, :], vmin=self.vmin2, vmax=self.vmax2, cmap="Greys")
+        self.ax2.imshow(array[self.current_slice, :, :], vmin=self.vmin2, vmax=self.vmax2, cmap="Greys")
         self.ax2.axis("off")
         self.fig2.tight_layout()
-        if self.roi_center2:
+        if self.roi_center2 and self.current_slice == 0:
             roinum = 1
             for i, point in enumerate(self.roi_center2):
                 x_y = (point[0] - roi_size / 2, point[1] - roi_size / 2)
@@ -623,6 +651,16 @@ class Application(tk.Frame):
                                      lw=2)
                 self.ax2.add_patch(rect)
                 self.ax2.text(point[0] + roi_size / 2 + 10, point[1] + roi_size / 2, str(roinum), size=12,
+                              color=wave_colors[i])
+                roinum += 1
+        elif self.marker_chase2:
+            roinum = 1
+            for i, point in enumerate(self.marker_chase2):
+                x_y = (point[0][self.current_slice], point[1][self.current_slice])
+                rect = pat.Rectangle(xy=x_y, width=roi_size, height=roi_size, edgecolor=wave_colors[i], fill=False,
+                                     lw=2)
+                self.ax2.add_patch(rect)
+                self.ax2.text(point[0][self.current_slice] + 40, point[1][self.current_slice] + 30, str(roinum), size=12,
                               color=wave_colors[i])
                 roinum += 1
         self.ax2.set_xlim([self.xlimlow2, self.xlimhigh2])
@@ -767,18 +805,27 @@ class Application(tk.Frame):
     def onclick1(self, event):
         if event.button == 3:
             self.rpress1 = event.xdata, event.ydata
-        else:
+        elif self.current_slice == 0:
             self.update_show_rois(f"{event.xdata:.2f}" + ", " + f"{event.ydata:.2f}" + "\n")
             self.roi_center1.append([event.xdata, event.ydata])
             self.plot_image1(self.array1)
+        else:
+            msgrt = tk.Tk()
+            msgrt.withdraw()
+            res = messagebox.showinfo("info", "choose ROI in the first slice")
+
 
     def onclick2(self, event):
         if event.button == 3:
             self.rpress2 = event.xdata, event.ydata
-        else:
+        elif self.current_slice == 0:
             self.update_show_rois(f"{event.xdata:.2f}" + ", " + f"{event.ydata:.2f}" + "\n")
             self.roi_center2.append([event.xdata, event.ydata])
             self.plot_image2(self.array2)
+        else:
+            msgrt = tk.Tk()
+            msgrt.withdraw()
+            res = messagebox.showinfo("info", "choose ROI in the first slice")
 
     def on_motion1(self, event):
         if self.rpress1 == None:
@@ -821,6 +868,7 @@ class Application(tk.Frame):
         self.y_v.set(7000)
         self.x_v2.set(500)
         self.y_v2.set(7000)
+        self.slice_num.set(0)
 
     def draw_plot(self, event=None):
 
@@ -828,6 +876,7 @@ class Application(tk.Frame):
         self.vmax = self.y_v.get()
         self.vmin2 = self.x_v2.get()
         self.vmax2 = self.y_v2.get()
+        self.current_slice = self.slice_num.get()
         self.plot_image1(self.array1)
         self.plot_image2(self.array2)
 
