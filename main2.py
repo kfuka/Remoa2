@@ -685,6 +685,8 @@ class Application(tk.Frame):
         self.wave_ax2.set_xlabel("Time (sec)")
         self.wave_ax2.set_ylabel("Phase (%)")
         self.wave_canvas2.draw()
+        self.marker_chase = None
+        self.marker_chase2 = None
         self.for_wave1 = []
         self.for_wave2 = []
         self.plot_wave()
