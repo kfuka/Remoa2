@@ -891,6 +891,7 @@ class Application(tk.Frame):
 
         self.canvas1.draw()
 
+
     def plot_image2(self, array):
         if self.imshow2 is None:
             self.ax2.cla()
