@@ -9,9 +9,11 @@ def wave_analysis(dicom_data):
     wave_samples = dicom_data[0x5400, 0x0100][0][0x003a, 0x0010].value
     wave_time = [i / freq for i in range(wave_samples)]
 
-    wave = np.delete(wave,len(wave)-1)
-    wave_time = np.delete(wave_time,0)
-    return wave, wave_time
+    wave_raw = wave
+    wave_time_raw = wave_time
+    wave = np.delete(wave, len(wave)-1)
+    wave_time = np.delete(wave_time, 0)
+    return wave, wave_time, wave_raw, wave_time_raw
 
 
 if __name__ == "__main__":

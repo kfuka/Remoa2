@@ -9,6 +9,7 @@ import tkinter as tk
 
 import pydicom
 
+wave_colors = ['magenta', 'blue', 'red', 'green', 'cyan', 'yellow', 'black']
 
 def get_wave_dicoms(folder_name):
     """
@@ -22,7 +23,11 @@ def get_wave_dicoms(folder_name):
         dicom_data = pydicom.dcmread(a_dicom)
         if len(dicom_data[0x5400, 0x0100][0][0x5400, 0x1010].value) > 10:
             # print(dicom_data[0x0008, 0x0018].value)
-            time_and_dicom[a_dicom] = [dicom_data.AcquisitionTime, dicom_data[0x0008, 0x0018].value]
+            if dicom_data[0x0008, 0x1010].value == "H-SIM1":
+                direction = "H"
+            else:
+                direction = "V"
+            time_and_dicom[a_dicom] = [dicom_data.AcquisitionTime, dicom_data[0x0008, 0x0018].value, direction]
 
     sorted_t_d = sorted(time_and_dicom.items(), key=lambda x: x[1], reverse=True)
     return sorted_t_d
@@ -57,12 +62,14 @@ class DicomSelectGui(tk.Frame):
         self.frame.grid(row=0, column=0)
         self.file_label = tk.Label(self.frame, text="File name")
         self.time_label = tk.Label(self.frame, text="Aqc. Time")
+        self.direction_label = tk.Label(self.frame, text="Direction")
         self.uid_label = tk.Label(self.frame, text="SOP Instance UID")
         self.title_label = tk.Label(self.frame, text="Select ONE PAIR of Dicom")
         self.title_label.grid(row=0, column=0, columnspan=3)
-        self.file_label.grid(row=1, column=2, pady=10)
-        self.uid_label.grid(row=1, column=3)
-        self.time_label.grid(row=1, column=1)
+        self.file_label.grid(row=1, column=3, pady=10)
+        self.uid_label.grid(row=1, column=4)
+        self.time_label.grid(row=1, column=2)
+        self.direction_label.grid(row=1, column=1)
 
         for i in range(len(self.dicom)):
             bl = tk.BooleanVar()
@@ -71,13 +78,15 @@ class DicomSelectGui(tk.Frame):
             b.grid(row=i + 2, column=0)
             self.checkval.append(bl)
 
-            label = tk.Label(self.frame, text=str(self.dicom[i][0]).split("/")[-1])
-            label.grid(row=i + 2, column=2, padx=10)
+            label = tk.Label(self.frame, text=str(self.dicom[i][0]).split("/")[-1], fg=wave_colors[int(i/2.0)])
+            label.grid(row=i + 2, column=3, padx=10)
             label2 = tk.Label(self.frame, text=str(
-                self.dicom[i][1][0][:2] + ":" + self.dicom[i][1][0][2:4] + ":" + self.dicom[i][1][0][4:6]))
-            label2.grid(row=i + 2, column=1, padx=10)
-            label3 = tk.Label(self.frame, text=str(self.dicom[i][1][1]))
-            label3.grid(row=i + 2, column=3, padx=10)
+                self.dicom[i][1][0][:2] + ":" + self.dicom[i][1][0][2:4] + ":" + self.dicom[i][1][0][4:6]), fg=wave_colors[int(i/2.0)])
+            label2.grid(row=i + 2, column=2, padx=10)
+            label3 = tk.Label(self.frame, text=str(self.dicom[i][1][1]), fg=wave_colors[int(i/2.0)])
+            label3.grid(row=i + 2, column=4, padx=10)
+            label4 = tk.Label(self.frame, text=str(self.dicom[i][1][2]), fg=wave_colors[int(i/2.0)])
+            label4.grid(row=i + 2, column=1, padx=10)
         exe_button = tk.Button(self.frame, text="open", command=self.dicom_open)
         exe_button.grid(row=len(self.dicom) + 2, column=0)
 

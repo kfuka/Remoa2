@@ -6,6 +6,7 @@ import configparser
 import glob
 import os
 import shutil
+import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -166,7 +167,10 @@ class build_report:
                     elif j >= 4:
                         colour_table[k, i, j] = "white"
                     elif table1[k, i, j] > 5.0:
-                        colour_table[k, i, j] = "yellow"
+                        if table1[k,i,j] > 10.0:
+                            colour_table[k,i,j] = "red"
+                        else:
+                            colour_table[k, i, j] = "yellow"
                     else:
                         colour_table[k, i, j] = "white"
         return colour_table
@@ -176,13 +180,19 @@ class build_report:
         plot table dynamically.
         :return:
         """
-        table_fig = plt.figure(figsize=(8, 4), dpi=100)
-        for i in range(self.table1.shape[0]):
+        if np.array(self.y1s).shape[1] > 2:
+            plot_row = 2
+        else:
+            plot_row = 1
+
+        table_fig = plt.figure(figsize=(8, plot_row * 2), dpi=100)
+        # for i in range(self.table1.shape[0]):
+        for i in range(np.array(self.y1s).shape[1]):
             v = i + 1
             # col_labels = ["x_L", "SI_L", "x_R", "SI_R", "3D"]
             col_labels = ["LR", "SI_V", "AP", "SI_H", "3D"]
             row_labels = ["1", "2", "3", "4", "5", "mean", "std"]
-            ax1 = table_fig.add_subplot(2, 2, v)
+            ax1 = table_fig.add_subplot(plot_row, 2, v)
             t1 = ax1.table(cellText=self.table1[i, :, :], colLabels=col_labels,
                            rowLabels=row_labels, loc="center", cellColours=self.colour_table[i])
             t1.auto_set_font_size(False)
@@ -202,7 +212,7 @@ class build_report:
         table_fig.savefig(self.table_file)
 
     def create_fig3_dyn(self):
-        fig3 = plt.figure(figsize=(8, len(self.time1s) * 4))
+        fig3 = plt.figure(figsize=(8, len(self.time1s) * 2.5))
         new_times = self.new_times
 
         figure_number = len(self.time1s)
@@ -254,11 +264,15 @@ class build_report:
 
         x_1_2_flat = newx1s
         y_1_2_2d = newy1s
+        if y1s.shape[1] > 2:
+            plot_row = 2
+        else:
+            plot_row = 1
 
-        fig4 = plt.figure(figsize=(8, 8))
+        fig4 = plt.figure(figsize=(8, plot_row * 4))
         for i in range(len(y_1_2_2d)):  # iはマーカーの数
             v = i + 1
-            ax1 = fig4.add_subplot(2, 2, v)
+            ax1 = fig4.add_subplot(plot_row, 2, v)
             ax1.plot(x_1_2_flat[i], y_1_2_2d[i], "o", c=wave_colors[i], mfc="None", alpha=0.5)
             ax1.set_xlabel("Resp. phase (%)")
             ax1.set_ylabel("Marker phase (%)")
@@ -291,11 +305,10 @@ class build_report:
             soup = BeautifulSoup(txt, features="lxml")
 
         tag_pid = soup.new_tag("p")
-        tag_pid.string = "Study Date: " + str(self.study_date[0]) + "\n"
+        tag_pid.string = "Study Date: " + str(self.study_date[0]) + ", Report created: " + datetime.datetime.now().strftime("%Y%m%d %H:%M:%S") +"\n"
         soup.body.append(tag_pid)
 
         tag_pid = soup.new_tag("p")
-        tag_pid.string = "Study Date: " + str(self.study_date[0]) + "\n"
         tag_pid.string = "Patient ID: " + os.path.split(self.folder)[1] + "\n"
         soup.body.append(tag_pid)
 
