@@ -76,6 +76,8 @@ class Application(tk.Frame):
         self.imshow2 = None
         self.timer = ""
         self.max_x1, self.max_x2, self.max_y1, self.max_y2 = [], [], [], []
+        self.current_patient_dicom_folder = []
+        self.id=[]
 
     def create_widgets(self):
         """
@@ -132,7 +134,7 @@ class Application(tk.Frame):
                                 to=ct_val_min,
                                 resolution=100,
                                 orient=tk.VERTICAL,
-                                length=500,
+                                length=400,
                                 showvalu=0,
                                 command=self.draw_plot)
         self.x_scale.grid(row=0, column=0, padx=0, pady=0, sticky=tk.W + tk.N + tk.S)
@@ -146,7 +148,7 @@ class Application(tk.Frame):
                                  to=ct_val_min,
                                  resolution=100,
                                  orient=tk.VERTICAL,
-                                 length=500,
+                                 length=400,
                                  showvalu=0,
                                  command=self.draw_plot)
         self.x_scale2.grid(row=0, column=0, padx=0, pady=0, sticky=tk.W + tk.N + tk.S)
@@ -157,7 +159,7 @@ class Application(tk.Frame):
                                      to=29,
                                      resolution=1,
                                      orient=tk.HORIZONTAL,
-                                     length=800,
+                                     length=500,
                                      showvalu=0,
                                      command=self.draw_plot)
         self.slice_scroll.grid(row=0, column=2, padx=1, pady=1, sticky=tk.N + tk.S)
@@ -205,14 +207,14 @@ class Application(tk.Frame):
         self.open_button = tk.Button(self.main_frame, text="Open DICOM", height=3, command=self.open_dicom)
         self.open_button.grid(row=1+plus_val, column=0, padx=2, pady=2, rowspan=2, columnspan=3, sticky=tk.EW + tk.NS)
 
-        self.show_rois = tk.Text(self.main_frame, height=40, width=40, wrap=tk.CHAR)
+        self.show_rois = tk.Text(self.main_frame, height=30, width=10, wrap=tk.CHAR)
         self.show_rois.grid(row=0, column=0, padx=0, pady=0, columnspan=6, sticky=tk.N + tk.EW)
         self.update_show_rois("1. Open DICOM\n")
         self.update_show_rois("2. Click markers\n")
         self.update_show_rois("3. Calculate!\n")
         self.update_show_rois("---------------\n")
 
-        my_font = font.Font(self.main_frame, family="Arial", size=14, weight="bold")
+        my_font = font.Font(self.main_frame, family="Arial", size=12, weight="bold")
 
         self.label1 = tk.Label(self.main_frame, text="#:", font=my_font)
         self.label2 = tk.Label(self.main_frame, text="L-R", font=my_font)
@@ -458,7 +460,10 @@ class Application(tk.Frame):
         self.update_show_rois("Data saved.\n")
 
     def report(self):
-        patient_save_folder = tk.filedialog.askdirectory(initialdir="./data_base/")
+        if self.id:
+            patient_save_folder = tk.filedialog.askdirectory(initialdir=data_base_folder + self.id)
+        else:
+            patient_save_folder = tk.filedialog.askdirectory(initialdir="./data_base/")
         patient = unite_class.build_report(patient_save_folder)
         self.update_show_rois("Report created.\n")
 
@@ -788,8 +793,14 @@ class Application(tk.Frame):
             pass
 
         init_dir = config.get("settings", "dicom_folder")
-        dicom_dir = tk.filedialog.askdirectory(initialdir=init_dir)
-        wave_dicoms = folder_viewer.get_wave_dicoms(dicom_dir + "/")
+        if self.current_patient_dicom_folder == []:
+            dicom_dir = tk.filedialog.askdirectory(initialdir=init_dir)
+            self.current_patient_dicom_folder = dicom_dir
+            wave_dicoms = folder_viewer.get_wave_dicoms(dicom_dir + "/")
+        else:
+            dicom_dir = tk.filedialog.askdirectory(initialdir=self.current_patient_dicom_folder)
+            self.current_patient_dicom_folder = dicom_dir
+            wave_dicoms = folder_viewer.get_wave_dicoms(dicom_dir + "/")
         dicom_window = tk.Toplevel()
         dicom_select_app = folder_viewer.DicomSelectGui(wave_dicoms, master=dicom_window)
         dicom_select_app.mainloop()
@@ -947,8 +958,8 @@ class Application(tk.Frame):
         self.wave_ax2.set_ylabel("Phase (%)")
         self.wave_fig2.tight_layout()
 
-        self.wave_ax.plot(self.wave_time_raw1, self.wave_raw1, "o", label="Resp. data", c="r", alpha=0.5)
-        self.wave_ax2.plot(self.wave_time_raw2, self.wave_raw2, "o", label="Resp. data", c="r", alpha=0.5)
+        self.wave_ax.plot(self.wave_time_raw1, self.wave_raw1, "o", label="Resp", c="r", alpha=0.5)
+        self.wave_ax2.plot(self.wave_time_raw2, self.wave_raw2, "o", label="Resp", c="r", alpha=0.5)
         self.wave_ax.plot(self.wave_time_raw1[self.current_slice], self.wave_raw1[self.current_slice], "o",
                           c="blue", mfc="None", markeredgewidth=2)
         self.wave_ax2.plot(self.wave_time_raw2[self.current_slice], self.wave_raw2[self.current_slice], "o",
@@ -961,11 +972,11 @@ class Application(tk.Frame):
         if self.for_wave1_raw:
             for i in range(len(self.for_wave1_raw)):
                 self.wave_ax.plot(self.wave_time_raw1, self.for_wave1_raw[i], "-.",
-                                  label="marker" + str(i + 1), c=wave_colors[i], alpha=0.7)
+                                  label="#" + str(i + 1), c=wave_colors[i], alpha=0.7)
         if self.for_wave2_raw:
             for i in range(len(self.for_wave2_raw)):
                 self.wave_ax2.plot(self.wave_time_raw2, self.for_wave2_raw[i], "-.",
-                                   label="marker" + str(i + 1), c=wave_colors[i], alpha=0.7)
+                                   label="#" + str(i + 1), c=wave_colors[i], alpha=0.7)
         self.wave_ax.legend(bbox_to_anchor=(1, 1), loc='upper right', borderaxespad=1, fontsize=10)
         self.wave_canvas.draw()
 
@@ -1324,15 +1335,15 @@ class Application(tk.Frame):
 
     def init_draw(self):
         global h
-        self.fig1 = Figure(figsize=(5, 5), dpi=100, facecolor='black')
+        self.fig1 = Figure(figsize=(4, 4), dpi=100, facecolor='black')
         self.ax1 = self.fig1.add_subplot(111)
         self.ax1.axis("off")
 
-        self.fig2 = Figure(figsize=(5, 5), dpi=100, facecolor='black')
+        self.fig2 = Figure(figsize=(4, 4), dpi=100, facecolor='black')
         self.ax2 = self.fig2.add_subplot(111)
         self.ax2.axis("off")
 
-        self.wave_fig = Figure(figsize=(5, 3), dpi=100)
+        self.wave_fig = Figure(figsize=(4, 3), dpi=100)
         self.wave_ax = self.wave_fig.add_subplot(111)
         self.wave_ax.set_xlim(0, 5)
         self.wave_ax.set_ylim(-5, 105)
@@ -1340,7 +1351,7 @@ class Application(tk.Frame):
         self.wave_ax.set_ylabel("Phase (%)")
         self.wave_ax.plot([], [])
 
-        self.wave_fig2 = Figure(figsize=(5, 3), dpi=100)
+        self.wave_fig2 = Figure(figsize=(4, 3), dpi=100)
         self.wave_ax2 = self.wave_fig2.add_subplot(111)
         self.wave_ax2.set_xlim(0, 5)
         self.wave_ax2.set_ylim(-5, 105)
