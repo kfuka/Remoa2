@@ -67,6 +67,7 @@ def track_MIL(roi, array, sopuid, the_id, id):
     return history
 
 
+
 def from_uint16_to_uint8(img, groi):
     """
     Convert array from uint16 to uint8. groi holds ROI coordinate information.

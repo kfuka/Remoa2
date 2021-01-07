@@ -224,7 +224,8 @@ class build_report:
             ax1_3.set_title("Acq. time: " + str(new_times[i][0]))
             ax1_3.set_ylabel("Resp. Phase")
             ax1_3.set_xlabel("Time (sec.)")
-            ax1_3.legend()
+            if i == 0:
+                ax1_3.legend()
 
             axy1_3 = fig3.add_subplot(figure_number, 2, (i + 1) * 2)
             axy1_3.plot(self.time2s[i], self.x2s[i], "o", label="resp.", c="r", alpha=0.5)
@@ -233,7 +234,7 @@ class build_report:
             axy1_3.set_title("Acq. time: " + new_times[i][1])
             axy1_3.set_ylabel("Resp. Phase")
             axy1_3.set_xlabel("Time (sec.)")
-            axy1_3.legend()
+            # axy1_3.legend()
 
         plt.tight_layout()
         fig3.savefig(self.resp_file)

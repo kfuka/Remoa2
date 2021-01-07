@@ -29,7 +29,7 @@ def get_wave_dicoms(folder_name):
                 direction = "V"
             time_and_dicom[a_dicom] = [dicom_data.AcquisitionTime, dicom_data[0x0008, 0x0018].value, direction]
 
-    sorted_t_d = sorted(time_and_dicom.items(), key=lambda x: x[1], reverse=True)
+    sorted_t_d = sorted(time_and_dicom.items(), key=lambda x: x[1], reverse=False)
     return sorted_t_d
 
 

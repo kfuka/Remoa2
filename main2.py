@@ -35,6 +35,7 @@ spacing_correction_factor = 1.5 * 1550 / 2111.63
 ct_val_min = -2000
 ct_val_max = 10000
 ct_val_scale = 0.5
+preset_list = ["Bone", "Lung", "Soft"]
 
 
 
@@ -66,6 +67,7 @@ class Application(tk.Frame):
         self.ctrlpress1 = None
         self.ctrlpress2 = None
         self.ctrl_is_held = False
+        self.shift_is_held = False
         self.rpress1 = None
         self.rpress2 = None
         self.calculated = False
@@ -77,7 +79,8 @@ class Application(tk.Frame):
         self.timer = ""
         self.max_x1, self.max_x2, self.max_y1, self.max_y2 = [], [], [], []
         self.current_patient_dicom_folder = []
-        self.id=[]
+        self.id = []
+
 
     def create_widgets(self):
         """
@@ -103,11 +106,13 @@ class Application(tk.Frame):
 
         self.canvas1 = FigureCanvasTkAgg(self.fig1, self.canvas_frame1)
         self.canvas1.draw()
-        self.canvas1.get_tk_widget().grid(row=0, column=0)
+        # self.canvas1.get_tk_widget().grid(row=0, column=0)
+        self.canvas1.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.canvas1.mpl_connect('button_press_event', self.onclick1)
         self.canvas1.mpl_connect('scroll_event', self.mouse_scrolled1)
         self.canvas1.mpl_connect('motion_notify_event', self.on_motion1)
         self.canvas1.mpl_connect('button_release_event', self.on_release1)
+        self.canvas1.mpl_connect('key_press_event', self.on_key1)
 
         self.canvas2 = FigureCanvasTkAgg(self.fig2, self.canvas_frame2)
         self.canvas2.draw()
@@ -175,9 +180,11 @@ class Application(tk.Frame):
         self.loop_on_button.grid(row=0, column=5, padx=1, pady=1, sticky=tk.W + tk.E + tk.N + tk.S)
         self.loop_off_button = tk.Button(self.scroll_frame, text="II", height=2, width=4, command=self.loop_off)
         self.loop_off_button.grid(row=0, column=6, padx=1, pady=1, sticky=tk.W + tk.E + tk.N + tk.S)
-        preset_txt = tk.StringVar()
-        preset_txt.set("preset")
-        self.preset = tk.OptionMenu(self.scroll_frame, preset_txt, "Bone", "Lung", "Soft", command=self.preset)
+        self.preset_txt = tk.StringVar()
+        self.preset_txt.set("preset")
+        # self.preset = tk.OptionMenu(self.scroll_frame, preset_txt, "Bone", "Lung", "Soft", command=self.preset)
+        # preslist = self.preset_list
+        self.preset = tk.OptionMenu(self.scroll_frame, self.preset_txt, *preset_list, command=self.preset_loop)
         self.preset.grid(row=0, column=7, padx=1, pady=1, sticky=tk.W + tk.E + tk.N + tk.S)
 
 
@@ -329,7 +336,7 @@ class Application(tk.Frame):
         self.patient_folder["state"] = "disable"
         self.loop_off_button["state"] = "disable"
 
-    def preset(self, value):
+    def preset_loop(self, value):
         if value == "Bone":
             self.y_v.set(2200)  # vmax
             self.x_v.set(200)  # vmin
@@ -1018,20 +1025,173 @@ class Application(tk.Frame):
         self.update_show_rois("---------------\n")
         self.update_show_rois("ID: " + str(self.id) + "\n")
 
+    def rotate_preset(self):
+        val = self.preset_txt.get()
+        if val in preset_list:
+            ind = preset_list.index(val)
+            if ind < len(preset_list) -1:
+                self.preset_txt.set(preset_list[ind + 1])
+                self.preset_loop(preset_list[ind + 1])
+            elif ind == len(preset_list) - 1:
+                self.preset_txt.set(preset_list[0])
+                self.preset_loop(preset_list[0])
+        else:
+            self.preset_txt.set(preset_list[0])
+            self.preset_loop(preset_list[0])
+
     def update_show_rois(self, roitext):
         self.show_rois.insert(tk.END, roitext)
 
     def on_key_press(self, event):
         if event.keysym == 'Control_L' or event.keysym == 'Control_R':
             self.ctrl_is_held = True
-        if event.keysym == 'Right':
+        if event.keysym == "Shift_L" or event.keysym == "Shift_R":
+            self.shift_is_held = True
+
+        if self.shift_is_held:
+            if event.keysym == "Right" or event.keysym == "6":
+                self.go_right_edge()
+            elif event.keysym == "Left" or event.keysym == "4":
+                self.go_left_edge()
+
+        elif event.keysym == 'Right' or event.keysym == "6":
             self.wheel_slice(1)
-        if event.keysym == 'Left':
+        elif event.keysym == 'Left' or event.keysym == "4":
             self.wheel_slice(-1)
+        elif event.keysym == "Down" or event.keysym == "minus":
+            diff1, diff2 = 100, 100
+            zoom_factor = 0.2
+
+            self.xlimhigh1 = self.xlimhigh1 + diff1 * zoom_factor
+            self.xlimlow1 = self.xlimlow1 - diff1 * zoom_factor
+            self.ylimhigh1 = self.ylimhigh1 + diff2 * zoom_factor
+            self.ylimlow1 = self.ylimlow1 - diff2 * zoom_factor
+
+            self.xlimhigh2 = self.xlimhigh2 + diff1 * zoom_factor
+            self.xlimlow2 = self.xlimlow2 - diff1 * zoom_factor
+            self.ylimhigh2 = self.ylimhigh2 + diff2 * zoom_factor
+            self.ylimlow2 = self.ylimlow2 - diff2 * zoom_factor
+
+            self.plot_image1(self.array1)
+            self.plot_image2(self.array2)
+
+        elif event.keysym == "Up" or event.keysym == "plus":
+            diff1, diff2 = 100, 100
+            zoom_factor = 0.2
+
+            self.xlimhigh1 = self.xlimhigh1 - diff1 * zoom_factor
+            self.xlimlow1 = self.xlimlow1 + diff1 * zoom_factor
+            self.ylimhigh1 = self.ylimhigh1 - diff2 * zoom_factor
+            self.ylimlow1 = self.ylimlow1 + diff2 * zoom_factor
+
+            self.xlimhigh2 = self.xlimhigh2 - diff1 * zoom_factor
+            self.xlimlow2 = self.xlimlow2 + diff1 * zoom_factor
+            self.ylimhigh2 = self.ylimhigh2 - diff2 * zoom_factor
+            self.ylimlow2 = self.ylimlow2 + diff2 * zoom_factor
+
+            self.plot_image1(self.array1)
+            self.plot_image2(self.array2)
+
+        elif event.keysym == "8":
+            # pan up
+            # press_x, press_y = self.ctrlpress1
+            dx = 0
+            dy = 10
+
+            self.xlimlow1 = self.xlimlow1 - dx
+            self.xlimhigh1 = self.xlimhigh1 - dx
+            self.ylimlow1 = self.ylimlow1 - dy
+            self.ylimhigh1 = self.ylimhigh1 - dy
+            self.ylimlow2 = self.ylimlow2 - dy
+            self.ylimhigh2 = self.ylimhigh2 - dy
+
+            self.plot_image1(self.array1)
+            self.plot_image2(self.array2)
+
+        elif event.keysym == "2":
+            # pan up
+            # press_x, press_y = self.ctrlpress1
+            dx = 0
+            dy = -10
+
+            self.xlimlow1 = self.xlimlow1 - dx
+            self.xlimhigh1 = self.xlimhigh1 - dx
+            self.ylimlow1 = self.ylimlow1 - dy
+            self.ylimhigh1 = self.ylimhigh1 - dy
+            self.ylimlow2 = self.ylimlow2 - dy
+            self.ylimhigh2 = self.ylimhigh2 - dy
+
+            self.plot_image1(self.array1)
+            self.plot_image2(self.array2)
+
+        elif event.keysym == "9":
+            # pan up
+            # press_x, press_y = self.ctrlpress1
+            dx = - 10
+            dy = 0
+
+            self.xlimlow1 = self.xlimlow1 - dx
+            self.xlimhigh1 = self.xlimhigh1 - dx
+            self.ylimlow1 = self.ylimlow1 - dy
+            self.ylimhigh1 = self.ylimhigh1 - dy
+            self.ylimlow2 = self.ylimlow2 - dy
+            self.ylimhigh2 = self.ylimhigh2 - dy
+
+            self.plot_image1(self.array1)
+            self.plot_image2(self.array2)
+
+        elif event.keysym == "7":
+            # pan up
+            # press_x, press_y = self.ctrlpress1
+            dx = 10
+            dy = 0
+
+            self.xlimlow1 = self.xlimlow1 - dx
+            self.xlimhigh1 = self.xlimhigh1 - dx
+            self.ylimlow1 = self.ylimlow1 - dy
+            self.ylimhigh1 = self.ylimhigh1 - dy
+            self.ylimlow2 = self.ylimlow2 - dy
+            self.ylimhigh2 = self.ylimhigh2 - dy
+
+            self.plot_image1(self.array1)
+            self.plot_image2(self.array2)
+
+        elif event.keysym == "3":
+            dx = - 10
+            dy = 0
+            self.xlimlow2 = self.xlimlow2 - dx
+            self.xlimhigh2 = self.xlimhigh2 - dx
+            self.ylimlow2 = self.ylimlow2 - dy
+            self.ylimhigh2 = self.ylimhigh2 - dy
+            self.ylimlow1 = self.ylimlow1 - dy
+            self.ylimhigh1 = self.ylimhigh1 - dy
+            self.plot_image1(self.array1)
+            self.plot_image2(self.array2)
+
+        elif event.keysym == "1":
+            dx = 10
+            dy = 0
+            self.xlimlow2 = self.xlimlow2 - dx
+            self.xlimhigh2 = self.xlimhigh2 - dx
+            self.ylimlow2 = self.ylimlow2 - dy
+            self.ylimhigh2 = self.ylimhigh2 - dy
+            self.ylimlow1 = self.ylimlow1 - dy
+            self.ylimhigh1 = self.ylimhigh1 - dy
+            self.plot_image1(self.array1)
+            self.plot_image2(self.array2)
+
+        elif event.keysym == "p":
+            self.rotate_preset()
+
 
     def on_key_release(self, event):
         if event.keysym == 'Control_L' or event.keysym == 'Control_R':
             self.ctrl_is_held = False
+        if event.keysym == "Shift_L" or event.keysym == "Shift_R":
+            self.shift_is_held = False
+
+    def on_key1(self, event):
+        print('you pressed', event.key, event.xdata, event.ydata)
 
     def mouse_scrolled1(self, event):
         """
@@ -1223,8 +1383,8 @@ class Application(tk.Frame):
                 dy = (event.ydata - rpress_y) * ct_val_scale
                 current_x, current_y = self.x_v.get(), self.y_v.get()
                 # x_v: min, y_v: max
-                new_min = current_x + dx + dy
-                new_max = current_y - dx + dy
+                new_min = current_x - dx - dy
+                new_max = current_y + dx - dy
                 if new_min < ct_val_min:
                     new_min = ct_val_min
                 if new_max > ct_val_max:
@@ -1275,8 +1435,8 @@ class Application(tk.Frame):
                 dy = (event.ydata - rpress_y) * ct_val_scale
                 current_x, current_y = self.x_v2.get(), self.y_v2.get()
                 # x_v: min, y_v: max
-                new_min = current_x + dx + dy
-                new_max = current_y - dx + dy
+                new_min = current_x - dx - dy
+                new_max = current_y + dx - dy
                 if new_min < ct_val_min:
                     new_min = ct_val_min
                 if new_max > ct_val_max:
