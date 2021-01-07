@@ -80,6 +80,7 @@ class Application(tk.Frame):
         self.max_x1, self.max_x2, self.max_y1, self.max_y2 = [], [], [], []
         self.current_patient_dicom_folder = []
         self.id = []
+        self.is_in_loop = False
 
 
     def create_widgets(self):
@@ -321,8 +322,8 @@ class Application(tk.Frame):
         self.patient_folder = tk.Button(self.main_frame, text="Patient folder", command=self.open_patient_folder)
         self.patient_folder.grid(row=4+plus_val, column=3, padx=2, pady=2, columnspan=3, sticky=tk.EW + tk.NS)
 
-        self.save_data = tk.Button(self.main_frame, text="Save Data", height=3, command=self.save_data)
-        self.save_data.grid(row=5+plus_val, column=0, padx=2, pady=2, rowspan=2, columnspan=3, sticky=tk.EW + tk.NS)
+        self.save_data_b = tk.Button(self.main_frame, text="Save Data", height=3, command=self.save_data)
+        self.save_data_b.grid(row=5+plus_val, column=0, padx=2, pady=2, rowspan=2, columnspan=3, sticky=tk.EW + tk.NS)
 
         self.show_animation = tk.Button(self.main_frame, text="Save Animation", height=3, command=self.animate)
         self.show_animation.grid(row=1+plus_val, column=3, padx=2, pady=2, rowspan=2, columnspan=3, sticky=tk.EW)
@@ -330,7 +331,7 @@ class Application(tk.Frame):
         self.quit_button = tk.Button(self.main_frame, text="quit", command=self.go_quit)
         self.quit_button.grid(row=6+plus_val, column=3, padx=2, pady=2, columnspan=3, sticky=tk.EW + tk.NS)
 
-        self.save_data["state"] = "disable"
+        self.save_data_b["state"] = "disable"
         self.calc_exe["state"] = "disable"
         self.show_animation["state"] = "disable"
         self.patient_folder["state"] = "disable"
@@ -377,6 +378,7 @@ class Application(tk.Frame):
         self.show_loop()
 
     def show_loop(self):
+        self.is_in_loop = True
         self.loop_on_button["state"] = "disable"
         self.loop_off_button["state"] = "active"
         global timers
@@ -392,6 +394,7 @@ class Application(tk.Frame):
     def loop_off(self):
         self.loop_on_button["state"] = "active"
         self.loop_off_button["state"] = "disable"
+        self.is_in_loop = False
         global timers
         root.after_cancel(timers)
         timers = None
@@ -476,7 +479,7 @@ class Application(tk.Frame):
 
     def calc(self):
         self.show_animation["state"] = "active"
-        self.save_data["state"] = "active"
+        self.save_data_b["state"] = "active"
         max_x1 = []
         max_x2 = []
         max_y1 = []
@@ -784,7 +787,7 @@ class Application(tk.Frame):
         self.calc_exe["state"] = "active"
         self.patient_folder["state"] = "active"
         self.show_animation["state"] = "disable"
-        self.save_data["state"] = "disable"
+        self.save_data_b["state"] = "disable"
         self.roi_clear["state"] = "active"
         self.calculated = False
         self.show_rois.delete('1.0', tk.END)
@@ -994,7 +997,7 @@ class Application(tk.Frame):
         self.clear_SI_table()
         self.calculated = False
         self.show_animation["state"] = "disable"
-        self.save_data["state"] = "disable"
+        self.save_data_b["state"] = "disable"
         self.show_rois.delete('1.0', tk.END)
         self.roi_center1 = []
         self.roi_center2 = []
@@ -1092,7 +1095,7 @@ class Application(tk.Frame):
             self.plot_image1(self.array1)
             self.plot_image2(self.array2)
 
-        elif event.keysym == "8":
+        elif event.keysym == "2":
             # pan up
             # press_x, press_y = self.ctrlpress1
             dx = 0
@@ -1108,7 +1111,7 @@ class Application(tk.Frame):
             self.plot_image1(self.array1)
             self.plot_image2(self.array2)
 
-        elif event.keysym == "2":
+        elif event.keysym == "8":
             # pan up
             # press_x, press_y = self.ctrlpress1
             dx = 0
@@ -1124,7 +1127,7 @@ class Application(tk.Frame):
             self.plot_image1(self.array1)
             self.plot_image2(self.array2)
 
-        elif event.keysym == "9":
+        elif event.keysym == "7":
             # pan up
             # press_x, press_y = self.ctrlpress1
             dx = - 10
@@ -1140,7 +1143,7 @@ class Application(tk.Frame):
             self.plot_image1(self.array1)
             self.plot_image2(self.array2)
 
-        elif event.keysym == "7":
+        elif event.keysym == "9":
             # pan up
             # press_x, press_y = self.ctrlpress1
             dx = 10
@@ -1156,7 +1159,7 @@ class Application(tk.Frame):
             self.plot_image1(self.array1)
             self.plot_image2(self.array2)
 
-        elif event.keysym == "3":
+        elif event.keysym == "1":
             dx = - 10
             dy = 0
             self.xlimlow2 = self.xlimlow2 - dx
@@ -1168,7 +1171,7 @@ class Application(tk.Frame):
             self.plot_image1(self.array1)
             self.plot_image2(self.array2)
 
-        elif event.keysym == "1":
+        elif event.keysym == "3":
             dx = 10
             dy = 0
             self.xlimlow2 = self.xlimlow2 - dx
@@ -1183,6 +1186,26 @@ class Application(tk.Frame):
         elif event.keysym == "p":
             self.rotate_preset()
 
+        elif event.keysym == "o":
+            self.open_dicom()
+
+        elif event.keysym == "space":
+            if self.is_in_loop:
+                self.loop_off()
+            else:
+                self.loop_on()
+
+        elif event.keysym == "s":
+            self.save_data()
+
+        elif event.keysym == "q":
+            self.go_quit()
+
+        elif event.keysym == "c":
+            self.clear_roi()
+
+        elif event.keysym == "r":
+            self.report()
 
     def on_key_release(self, event):
         if event.keysym == 'Control_L' or event.keysym == 'Control_R':
