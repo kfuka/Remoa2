@@ -869,6 +869,7 @@ class Application(tk.Frame):
 
         self.plot_image1(self.array1_dec)
         self.plot_image2(self.array2_dec)
+        self.slice_num.set(0)
         self.pixel_spacing1 = np.array([float(self.dicom1.PixelSpacing[0]),
                                         float(self.dicom1.PixelSpacing[1])]) * spacing_correction_factor
         self.pixel_spacing2 = np.array([float(self.dicom2.PixelSpacing[0]),
