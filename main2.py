@@ -162,7 +162,7 @@ class Application(tk.Frame):
         self.slice_scroll = tk.Scale(self.scroll_frame,
                                      variable=self.slice_num,
                                      from_=0,
-                                     to=29,
+                                     to=28,
                                      resolution=1,
                                      orient=tk.HORIZONTAL,
                                      length=500,
@@ -383,7 +383,7 @@ class Application(tk.Frame):
         self.loop_off_button["state"] = "active"
         global timers
         current_slice = self.slice_num.get()
-        if current_slice == 29:
+        if current_slice == 28:
             current_slice = 0
         else:
             current_slice += 1
@@ -433,7 +433,7 @@ class Application(tk.Frame):
         fig = plt.figure(figsize=(8, 4))
         ax1 = fig.add_subplot(1, 2, 1)
         ax2 = fig.add_subplot(1, 2, 2)
-        ax1.imshow(self.array1[0, :, :], vmin=self.vmin, vmax=self.vmax, cmap="Greys")
+        ax1.imshow(self.array1_dec[0, :, :], vmin=self.vmin, vmax=self.vmax, cmap="Greys")
         ax1.axis("off")
         fig.tight_layout()
         if self.roi_center1:
@@ -449,7 +449,7 @@ class Application(tk.Frame):
         ax1.set_xlim([self.xlimlow1, self.xlimhigh1])
         ax1.set_ylim([self.ylimhigh1, self.ylimlow1])
 
-        ax2.imshow(self.array2[0, :, :], vmin=self.vmin2, vmax=self.vmax2, cmap="Greys")
+        ax2.imshow(self.array2_dec[0, :, :], vmin=self.vmin2, vmax=self.vmax2, cmap="Greys")
         ax2.axis("off")
         # fig1.tight_layout()
         if self.roi_center2:
@@ -497,7 +497,7 @@ class Application(tk.Frame):
             for i in range(len(self.roi_center1)):
                 returned = csrt_tracker.track_MIL(
                     (self.roi_center1[i][0] - roi_size / 2, self.roi_center1[i][1] - roi_size / 2, roi_size, roi_size),
-                    self.array1, self.SOPUID[0], self.id, i)
+                    self.array1_dec, self.SOPUID[0], self.id, i)
                 x_shifts = np.array([it[0] for it in returned])
                 y_shifts = np.array([it[1] for it in returned])
                 # savgol fileter
@@ -510,14 +510,14 @@ class Application(tk.Frame):
                 max_y1.append(max_y_move)
                 calcd_wave = np.array(y_shifts - np.min(y_shifts)) / np.max(y_shifts - np.min(y_shifts)) * 100
                 calcd_wave_raw = calcd_wave
-                calcd_wave = np.delete(calcd_wave, 0)  # ここできってる
+                calcd_wave = calcd_wave # ここできってた
                 self.for_wave1.append(calcd_wave)
                 self.for_wave1_raw.append(calcd_wave_raw)
             # self.update_show_rois("Horiz A-P, S-I\n")
             for i in range(len(self.roi_center2)):
                 returned = csrt_tracker.track_MIL(
                     (self.roi_center2[i][0] - roi_size / 2, self.roi_center2[i][1] - roi_size / 2, roi_size, roi_size),
-                    self.array2, self.SOPUID[0], self.id, i + 4)
+                    self.array2_dec, self.SOPUID[0], self.id, i + 4)
                 x_shifts = np.array([it[0] for it in returned])
                 y_shifts = np.array([it[1] for it in returned])
                 # savgol fileter
@@ -531,8 +531,9 @@ class Application(tk.Frame):
 
                 calcd_wave = np.array(y_shifts - np.min(y_shifts)) / np.max(y_shifts - np.min(y_shifts)) * 100
                 calcd_wave_raw = calcd_wave
-                calcd_wave = np.delete(calcd_wave, 0)
                 self.for_wave2.append(calcd_wave)
+                calcd_wave = np.delete(calcd_wave, 0)
+
                 self.for_wave2_raw.append(calcd_wave_raw)
 
             LR_from_center = []
@@ -744,12 +745,12 @@ class Application(tk.Frame):
             # g1scale = 255.0 / (self.vmax - self.vmin)
             # gif_array_1 = (gif_array_1 - self.vmin) * g1scale
             # ax.imshow(gif_array_1, cmap="Greys", vmin=self.vmin * g1scale, vmax=self.vmax * g1scale)
-            ax.imshow(self.array1[i, :, :], cmap="Greys", vmin=self.vmin, vmax=self.vmax)
+            ax.imshow(self.array1_dec[i, :, :], cmap="Greys", vmin=self.vmin, vmax=self.vmax)
             # gif_array_2 = self.array2[i, :, :]
             # g2scale = 255.0 / (self.vmax2 - self.vmin2)
             # gif_array_2 = (gif_array_2 - self.vmin2) * g2scale
             # ax2.imshow(gif_array_2, cmap="Greys", vmin=self.vmin2 * g2scale, vmax=self.vmax2 * g2scale)
-            ax2.imshow(self.array2[i, :, :], cmap="Greys", vmin=self.vmin2, vmax=self.vmax2)
+            ax2.imshow(self.array2_dec[i, :, :], cmap="Greys", vmin=self.vmin2, vmax=self.vmax2)
             for j in range(len(self.marker_chase)):
                 x_y = (self.marker_chase[j][0][i], self.marker_chase[j][1][i])
                 rect = pat.Rectangle(xy=x_y, width=roi_size, height=roi_size, edgecolor=wave_colors[j], fill=False,
@@ -772,7 +773,7 @@ class Application(tk.Frame):
             ax2.set_ylim([self.ylimhigh2, self.ylimlow2])
             # ax.text(1.0, 1.0, "Vert.", ha="left", va="top", transform=ax.transAxes)
 
-        ami = animation.FuncAnimation(fig_func, update, frames=len(self.array1), interval=80)
+        ami = animation.FuncAnimation(fig_func, update, frames=len(self.array1_dec), interval=80)
 
         def save_gif():
             ami.save(data_base_folder + self.id + "/" + str(self.SOPUID[0]) + ".gif", writer="pillow", fps=10, dpi=300)
@@ -846,7 +847,9 @@ class Application(tk.Frame):
         self.wave2, self.wave_time2, self.wave_raw2, self.wave_time_raw2 = wave_analysis.wave_analysis(self.dicom2)
         self.plot_wave()
         self.array1 = self.dicom1.pixel_array
+        self.array1_dec = np.delete(self.array1, 0, axis=0)
         self.array2 = self.dicom2.pixel_array
+        self.array2_dec = np.delete(self.array2, 0, axis=0)
         # print(self.array1.shape) #(30, 1512, 1512)
         self.xlimlow1 = 0
         self.ylimlow1 = 0
@@ -864,8 +867,8 @@ class Application(tk.Frame):
             self.vmin2 = 500
             self.vmax2 = 7000
 
-        self.plot_image1(self.array1)
-        self.plot_image2(self.array2)
+        self.plot_image1(self.array1_dec)
+        self.plot_image2(self.array2_dec)
         self.pixel_spacing1 = np.array([float(self.dicom1.PixelSpacing[0]),
                                         float(self.dicom1.PixelSpacing[1])]) * spacing_correction_factor
         self.pixel_spacing2 = np.array([float(self.dicom2.PixelSpacing[0]),
@@ -955,7 +958,7 @@ class Application(tk.Frame):
     def plot_wave(self):
         wave_colors = ["g", "b", "c", "m", "y", "k", "w"]
         self.wave_ax.cla()
-        self.wave_ax.set_xlim(0, 5)
+        self.wave_ax.set_xlim(min(self.wave_time1), max(self.wave_time1))
         self.wave_ax.set_ylim(-5, 105)
         self.wave_ax.set_xlabel("Time (sec)")
         self.wave_ax.set_ylabel("Phase (%)")
@@ -968,24 +971,24 @@ class Application(tk.Frame):
         self.wave_ax2.set_ylabel("Phase (%)")
         self.wave_fig2.tight_layout()
 
-        self.wave_ax.plot(self.wave_time_raw1, self.wave_raw1, "o", label="Resp", c="r", alpha=0.5)
-        self.wave_ax2.plot(self.wave_time_raw2, self.wave_raw2, "o", label="Resp", c="r", alpha=0.5)
-        self.wave_ax.plot(self.wave_time_raw1[self.current_slice], self.wave_raw1[self.current_slice], "o",
+        self.wave_ax.plot(self.wave_time1, self.wave1, "o", label="Resp", c="r", alpha=0.5)
+        self.wave_ax2.plot(self.wave_time2, self.wave2, "o", label="Resp", c="r", alpha=0.5)
+        self.wave_ax.plot(self.wave_time1[self.current_slice], self.wave1[self.current_slice], "o",
                           c="blue", mfc="None", markeredgewidth=2)
-        self.wave_ax2.plot(self.wave_time_raw2[self.current_slice], self.wave_raw2[self.current_slice], "o",
+        self.wave_ax2.plot(self.wave_time2[self.current_slice], self.wave2[self.current_slice], "o",
                            c="blue", mfc="None", markeredgewidth=2)
 
-        wave1_max = max(self.wave_time_raw1)
-        wave2_max = max(self.wave_time_raw2)
+        wave1_max = max(self.wave_time1)
+        wave2_max = max(self.wave_time2)
         self.wave_ax.set_xlim(0, wave1_max)
         self.wave_ax2.set_xlim(0, wave2_max)
-        if self.for_wave1_raw:
-            for i in range(len(self.for_wave1_raw)):
-                self.wave_ax.plot(self.wave_time_raw1, self.for_wave1_raw[i], "-.",
+        if self.for_wave1:
+            for i in range(len(self.for_wave1)):
+                self.wave_ax.plot(np.array(self.wave_time1), self.for_wave1[i], "-.",
                                   label="#" + str(i + 1), c=wave_colors[i], alpha=0.7)
-        if self.for_wave2_raw:
-            for i in range(len(self.for_wave2_raw)):
-                self.wave_ax2.plot(self.wave_time_raw2, self.for_wave2_raw[i], "-.",
+        if self.for_wave2:
+            for i in range(len(self.for_wave2)):
+                self.wave_ax2.plot(np.array(self.wave_time2), self.for_wave2[i], "-.",
                                    label="#" + str(i + 1), c=wave_colors[i], alpha=0.7)
         self.wave_ax.legend(bbox_to_anchor=(1, 1), loc='upper right', borderaxespad=1, fontsize=10)
         self.wave_canvas.draw()
@@ -1001,8 +1004,8 @@ class Application(tk.Frame):
         self.show_rois.delete('1.0', tk.END)
         self.roi_center1 = []
         self.roi_center2 = []
-        self.plot_image1(self.array1)
-        self.plot_image2(self.array2)
+        self.plot_image1(self.array1_dec)
+        self.plot_image2(self.array2_dec)
         self.wave_ax.cla()
         self.wave_ax.set_xlim(0, 5)
         self.wave_ax.set_ylim(-5, 105)
@@ -1075,8 +1078,8 @@ class Application(tk.Frame):
             self.ylimhigh2 = self.ylimhigh2 + diff2 * zoom_factor
             self.ylimlow2 = self.ylimlow2 - diff2 * zoom_factor
 
-            self.plot_image1(self.array1)
-            self.plot_image2(self.array2)
+            self.plot_image1(self.array1_dec)
+            self.plot_image2(self.array2_dec)
 
         elif event.keysym == "Up" or event.keysym == "plus":
             diff1, diff2 = 100, 100
@@ -1092,8 +1095,8 @@ class Application(tk.Frame):
             self.ylimhigh2 = self.ylimhigh2 - diff2 * zoom_factor
             self.ylimlow2 = self.ylimlow2 + diff2 * zoom_factor
 
-            self.plot_image1(self.array1)
-            self.plot_image2(self.array2)
+            self.plot_image1(self.array1_dec)
+            self.plot_image2(self.array2_dec)
 
         elif event.keysym == "2":
             # pan up
@@ -1108,8 +1111,8 @@ class Application(tk.Frame):
             self.ylimlow2 = self.ylimlow2 - dy
             self.ylimhigh2 = self.ylimhigh2 - dy
 
-            self.plot_image1(self.array1)
-            self.plot_image2(self.array2)
+            self.plot_image1(self.array1_dec)
+            self.plot_image2(self.array2_dec)
 
         elif event.keysym == "8":
             # pan up
@@ -1124,8 +1127,8 @@ class Application(tk.Frame):
             self.ylimlow2 = self.ylimlow2 - dy
             self.ylimhigh2 = self.ylimhigh2 - dy
 
-            self.plot_image1(self.array1)
-            self.plot_image2(self.array2)
+            self.plot_image1(self.array1_dec)
+            self.plot_image2(self.array2_dec)
 
         elif event.keysym == "7":
             # pan up
@@ -1140,8 +1143,8 @@ class Application(tk.Frame):
             self.ylimlow2 = self.ylimlow2 - dy
             self.ylimhigh2 = self.ylimhigh2 - dy
 
-            self.plot_image1(self.array1)
-            self.plot_image2(self.array2)
+            self.plot_image1(self.array1_dec)
+            self.plot_image2(self.array2_dec)
 
         elif event.keysym == "9":
             # pan up
@@ -1156,8 +1159,8 @@ class Application(tk.Frame):
             self.ylimlow2 = self.ylimlow2 - dy
             self.ylimhigh2 = self.ylimhigh2 - dy
 
-            self.plot_image1(self.array1)
-            self.plot_image2(self.array2)
+            self.plot_image1(self.array1_dec)
+            self.plot_image2(self.array2_dec)
 
         elif event.keysym == "1":
             dx = - 10
@@ -1168,8 +1171,8 @@ class Application(tk.Frame):
             self.ylimhigh2 = self.ylimhigh2 - dy
             self.ylimlow1 = self.ylimlow1 - dy
             self.ylimhigh1 = self.ylimhigh1 - dy
-            self.plot_image1(self.array1)
-            self.plot_image2(self.array2)
+            self.plot_image1(self.array1_dec)
+            self.plot_image2(self.array2_dec)
 
         elif event.keysym == "3":
             dx = 10
@@ -1180,8 +1183,8 @@ class Application(tk.Frame):
             self.ylimhigh2 = self.ylimhigh2 - dy
             self.ylimlow1 = self.ylimlow1 - dy
             self.ylimhigh1 = self.ylimhigh1 - dy
-            self.plot_image1(self.array1)
-            self.plot_image2(self.array2)
+            self.plot_image1(self.array1_dec)
+            self.plot_image2(self.array2_dec)
 
         elif event.keysym == "p":
             self.rotate_preset()
@@ -1254,8 +1257,8 @@ class Application(tk.Frame):
                 self.ylimhigh2 = self.ylimhigh2 + diff2 * zoom_factor
                 self.ylimlow2 = self.ylimlow2 - diff2 * zoom_factor
                 # tohere
-            self.plot_image1(self.array1)
-            self.plot_image2(self.array2)
+            self.plot_image1(self.array1_dec)
+            self.plot_image2(self.array2_dec)
         # こにスライスを
         else:
             if event.button == "down":
@@ -1293,8 +1296,8 @@ class Application(tk.Frame):
                 self.xlimlow2 = self.xlimlow2 - diff1 * zoom_factor
                 self.ylimhigh2 = self.ylimhigh2 + diff2 * zoom_factor
                 self.ylimlow2 = self.ylimlow2 - diff2 * zoom_factor
-            self.plot_image1(self.array1)
-            self.plot_image2(self.array2)
+            self.plot_image1(self.array1_dec)
+            self.plot_image2(self.array2_dec)
         else:
             if event.button == "down":
                 self.wheel_slice(1)
@@ -1320,7 +1323,7 @@ class Application(tk.Frame):
         elif self.current_slice == 0 and not self.calculated:
             self.update_show_rois(f"{event.xdata:.2f}" + ", " + f"{event.ydata:.2f}" + "\n")
             self.roi_center1.append([event.xdata, event.ydata])
-            self.plot_image1(self.array1)
+            self.plot_image1(self.array1_dec)
         elif self.calculated:
             close_points = []
             for i, marker in enumerate(self.marker_chase):
@@ -1353,7 +1356,7 @@ class Application(tk.Frame):
         elif self.current_slice == 0 and not self.calculated:
             self.update_show_rois(f"{event.xdata:.2f}" + ", " + f"{event.ydata:.2f}" + "\n")
             self.roi_center2.append([event.xdata, event.ydata])
-            self.plot_image2(self.array2)
+            self.plot_image2(self.array2_dec)
         elif self.calculated:
             close_points = []
             for i, marker in enumerate(self.marker_chase2):
@@ -1396,7 +1399,7 @@ class Application(tk.Frame):
                         x_shifts, y_shifts = self.marker_chase[j]
                         calcd_wave = np.array(y_shifts - np.min(y_shifts)) / np.max(y_shifts - np.min(y_shifts)) * 100
                         self.for_wave1_raw[j] = calcd_wave
-                        calcd_wave = np.delete(calcd_wave, 0)
+                        # calcd_wave = np.delete(calcd_wave, 0)
                         self.for_wave1[j] = calcd_wave
                     self.draw_plot()
                     self.change_SI_table()
@@ -1427,8 +1430,8 @@ class Application(tk.Frame):
             self.ylimhigh1 = self.ylimhigh1 - dy
             self.ylimlow2 = self.ylimlow2 - dy
             self.ylimhigh2 = self.ylimhigh2 - dy
-            self.plot_image1(self.array1)
-            self.plot_image2(self.array2)
+            self.plot_image1(self.array1_dec)
+            self.plot_image2(self.array2_dec)
 
     def on_motion2(self, event):
         if self.ctrlpress2 == None:
@@ -1448,7 +1451,7 @@ class Application(tk.Frame):
                         x_shifts, y_shifts = self.marker_chase2[j]
                         calcd_wave = np.array(y_shifts - np.min(y_shifts)) / np.max(y_shifts - np.min(y_shifts)) * 100
                         self.for_wave2_raw[j] = calcd_wave
-                        calcd_wave = np.delete(calcd_wave, 0)
+                        # calcd_wave = np.delete(calcd_wave, 0)
                         self.for_wave2[j] = calcd_wave
                     self.draw_plot()
                     self.change_SI_table()
@@ -1479,8 +1482,8 @@ class Application(tk.Frame):
             self.ylimhigh2 = self.ylimhigh2 - dy
             self.ylimlow1 = self.ylimlow1 - dy
             self.ylimhigh1 = self.ylimhigh1 - dy
-            self.plot_image1(self.array1)
-            self.plot_image2(self.array2)
+            self.plot_image1(self.array1_dec)
+            self.plot_image2(self.array2_dec)
 
     def on_release1(self, event):
         self.ctrlpress1 = None
@@ -1511,8 +1514,8 @@ class Application(tk.Frame):
             self.vmin2 = self.vmax2 - 10
             self.x_v2.set(self.vmax2 - 10)
         self.current_slice = self.slice_num.get()
-        self.plot_image1(self.array1)
-        self.plot_image2(self.array2)
+        self.plot_image1(self.array1_dec)
+        self.plot_image2(self.array2_dec)
         self.plot_wave()
         # self.change_SI_table()
 
